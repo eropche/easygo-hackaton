@@ -1225,37 +1225,37 @@ function resetLivingRoomSession() {
 /* ─── FAIL → ENCOURAGE STORY DEMO ──────────────────────── */
 
 const STORY_BASE_CHAT = [
-  { id: 'story-sys', system: true, text: 'IRL rooftop challenge · Stream Living Room · reactions drive roomMood' },
-  { id: 'story-m0', author: 'NightOwl', badge: 'cap', badgeText: 'CAPTAIN', color: '#ffb020', text: 'he lining up the jump…', reacts: { '👀': 4 } },
-  { id: 'story-m1', author: 'StreetCam', text: 'wind is loud up there', reacts: { '👀': 2 } },
-  { id: 'story-m2', author: 'chatlurker', text: 'chat hold', reacts: {} },
+  { id: 'story-sys', system: true, text: 'chatVoo · Exciting beat · reactions drive roomMood' },
+  { id: 'story-m0', author: 'NightOwl', badge: 'cap', badgeText: 'CAPTAIN', color: '#ffb020', text: 'LETS GOOOOO', reacts: { '🔥': 4 } },
+  { id: 'story-m1', author: 'StreetCam', text: 'energy is INSANE rn', reacts: { '🔥': 2 } },
+  { id: 'story-m2', author: 'chatlurker', text: 'chatVoo mode', reacts: {} },
 ];
 
 const STORY_DEMO = {
   duration: 48000,
   acts: [
-    { at: 0, act: 1, chip: 'Act 1 · Low', caption: 'Streamer is down — room goes quiet', beat: 'tense', viewers: 12481 },
+    { at: 0, act: 1, chip: 'Act 1 · Exciting', caption: 'chatVoo energy — room is buzzing', beat: 'hype', viewers: 12481 },
     { at: 12000, act: 2, chip: 'Act 2 · Encourage', caption: 'Chat is lifting him up', beat: 'cozy', viewers: 13120 },
     { at: 28000, act: 3, chip: 'Act 3 · Loved it', caption: 'They liked the real moment — room is peaking', beat: 'hype', viewers: 14890 },
   ],
   messages: [
-    // Act 1 — tense / low (~15 lines)
-    { at: 500, author: 'Clavicular', badge: 'stream', badgeText: 'STREAMER', color: '#53fc18', text: 'man… that one stung. feeling kinda low rn', reacts: {} },
-    { at: 1100, author: 'TokyoDrift', badge: 'vip', badgeText: 'VIP', color: '#ff5c8a', text: 'oh nooo', reacts: { '🥺': 2 } },
-    { at: 1700, author: 'gg_enjoyer', text: '…', reacts: {} },
-    { at: 2300, author: 'KEKWKing', text: 'unlucky man', reacts: { '😔': 2 } },
-    { at: 2900, author: 'beanbag', text: 'that looked rough', reacts: { '👀': 2 } },
-    { at: 3500, author: 'quietfox', text: 'chat went quiet', reacts: {} },
-    { at: 4200, author: 'lowkey_fan', text: 'he okay?', reacts: { '❓': 2 } },
-    { at: 4900, author: 'spice_rack', text: 'take a sec bro', reacts: {} },
-    { at: 5600, author: 'chatlurker', text: 'he looks actually upset', reacts: { '👀': 3 } },
-    { at: 6300, author: 'PixelPam', badge: 'sub', badgeText: 'SUB 3', color: '#b06cff', text: 'felt that. you’re allowed to feel it', reacts: {}, forcePin: true },
-    { at: 7000, author: 'orbitron', text: 'same', reacts: { '💙': 2 } },
-    { at: 7600, author: 'NightOwl', badge: 'cap', badgeText: 'CAPTAIN', color: '#ffb020', text: 'you’re not alone in here', reacts: { '🫂': 2 } },
-    { at: 8200, author: 'Mod_ChaosBot', badge: 'mod', badgeText: 'MOD', color: '#00d488', text: 'breathe — chat stay kind', reacts: { '🙏': 2 } },
-    { at: 9000, author: 'ReelRat', text: 'no jokes rn', reacts: {} },
-    { at: 9800, author: 'MoonMile', text: 'sending love from chat', reacts: { '🫶': 3 } },
-    { at: 10800, author: 'CutKing', text: 'we got you', reacts: { '💙': 2 } },
+    // Act 1 — exciting / chatVoo (~15 lines)
+    { at: 500, author: 'Clavicular', badge: 'stream', badgeText: 'STREAMER', color: '#53fc18', text: 'CHAT — THIS IS THE MOMENT. chatVoo energy!', reacts: { '🔥': 6 } },
+    { at: 1100, author: 'TokyoDrift', badge: 'vip', badgeText: 'VIP', color: '#ff5c8a', text: 'AAAAA LETS GO', reacts: { '🔥': 4 } },
+    { at: 1700, author: 'gg_enjoyer', text: 'W W W W W', reacts: { '🔥': 3 } },
+    { at: 2300, author: 'KEKWKing', text: 'he is SO back', reacts: { '😂': 2 } },
+    { at: 2900, author: 'beanbag', text: 'goosebumps fr', reacts: { '👀': 2 } },
+    { at: 3500, author: 'quietfox', text: 'chat is vibrating', reacts: { '🔥': 2 } },
+    { at: 4200, author: 'lowkey_fan', text: 'volume UP', reacts: { '🔥': 2 } },
+    { at: 4900, author: 'spice_rack', text: 'peak stream already', reacts: {} },
+    { at: 5600, author: 'chatlurker', text: 'chatVoo hitting different', reacts: { '👀': 3 } },
+    { at: 6300, author: 'PixelPam', badge: 'sub', badgeText: 'SUB 3', color: '#b06cff', text: 'this energy is contagious — room feels alive', reacts: {}, forcePin: true },
+    { at: 7000, author: 'orbitron', text: 'same', reacts: { '🔥': 2 } },
+    { at: 7600, author: 'NightOwl', badge: 'cap', badgeText: 'CAPTAIN', color: '#ffb020', text: 'stand up chat', reacts: { '👏': 2 } },
+    { at: 8200, author: 'Mod_ChaosBot', badge: 'mod', badgeText: 'MOD', color: '#00d488', text: 'hype mode ON — keep it clean', reacts: { '🔥': 2 } },
+    { at: 9000, author: 'ReelRat', text: 'CLIP THAT', reacts: { '🔥': 3 } },
+    { at: 9800, author: 'MoonMile', text: 'best opener of the week', reacts: { '🔥': 3 } },
+    { at: 10800, author: 'CutKing', text: 'we are SO here for this', reacts: { '🔥': 2 } },
 
     // Act 2 — cozy / lift (~16 lines)
     { at: 12200, author: 'orbitron', text: 'here for you — we got you', reacts: { '🫶': 3 } },
@@ -1284,7 +1284,7 @@ const STORY_DEMO = {
     { at: 31300, author: 'TokyoDrift', badge: 'vip', badgeText: 'VIP', color: '#ff5c8a', text: 'CHAT IS COOKING', reacts: { '🔥': 4 } },
     { at: 32000, author: 'neon_nova', text: 'this is the loop', reacts: { '⚡': 3 } },
     { at: 32800, author: 'orbitron', text: 'run it back', reacts: { '🚀': 3 } },
-    { at: 33600, author: 'PixelPam', badge: 'sub', badgeText: 'SUB 3', color: '#b06cff', text: 'from low to loved — insane arc', reacts: { '😭': 4 } },
+    { at: 33600, author: 'PixelPam', badge: 'sub', badgeText: 'SUB 3', color: '#b06cff', text: 'from exciting to loved — chatVoo arc', reacts: { '😭': 4 } },
     { at: 34400, author: 'StreetCam', text: 'viewers spiking', reacts: { '👀': 3 } },
     { at: 35200, author: 'ClipLord', badge: 'sub', badgeText: 'SUB 8', color: '#b06cff', text: 'already in the reel', reacts: { '💯': 3 } },
     { at: 36000, author: 'gg_enjoyer', text: 'W ROOM', reacts: { '🎉': 4 } },
@@ -1293,17 +1293,17 @@ const STORY_DEMO = {
     { at: 39500, author: 'NightOwl', badge: 'cap', badgeText: 'CAPTAIN', color: '#ffb020', text: 'room is peaking — this is the loop', reacts: { '🔥': 4 } },
     { at: 41000, author: 'raid_ready', text: 'RAID ENERGY', reacts: { '🚀': 3 } },
     { at: 42500, author: 'Mod_ChaosBot', badge: 'mod', badgeText: 'MOD', color: '#00d488', text: 'keep the love rolling', reacts: { '👏': 3 } },
-    { at: 44000, author: 'chatlurker', text: 'best fail → love pipeline ever', reacts: { '😂': 3, '🔥': 2 } },
+    { at: 44000, author: 'chatlurker', text: 'best exciting → love pipeline ever', reacts: { '😂': 3, '🔥': 2 } },
   ],
   bursts: [
-    // Act 1 — soft reacts onto sticky when present
-    { at: 2800, emo: '😔', n: 3 },
+    // Act 1 — exciting / chatVoo hype onto sticky when present
+    { at: 2800, emo: '🔥', n: 5 },
     { at: 4500, emo: '👀', n: 4 },
-    { at: 6800, emo: '💙', n: 6, pin: true },
-    { at: 7500, emo: '🫂', n: 5, pin: true },
-    { at: 8500, emo: '🥺', n: 4, pin: true },
-    { at: 9500, emo: '🫶', n: 5, pin: true },
-    { at: 10500, emo: '😢', n: 3, pin: true },
+    { at: 6800, emo: '🔥', n: 8, pin: true },
+    { at: 7500, emo: '👏', n: 5, pin: true },
+    { at: 8500, emo: '😂', n: 4, pin: true },
+    { at: 9500, emo: '🔥', n: 6, pin: true },
+    { at: 10500, emo: '🚀', n: 4, pin: true },
     // Act 2 — cozy pile on sticky
     { at: 13000, emo: '🫶', n: 6, pin: true },
     { at: 14500, emo: '💙', n: 5, pin: true },
@@ -1502,7 +1502,7 @@ function startStoryDemo() {
   renderChat();
 
   setStoryScene(1);
-  setStreamMood('tense', { silent: true });
+  setStreamMood('hype', { silent: true });
   setStoryUI(STORY_DEMO.acts[0]);
   onReactionChange();
 
@@ -1558,13 +1558,13 @@ function startStoryDemo() {
         btn.textContent = '↺ Replay story';
         btn.classList.remove('running');
       }
-      pushCreatorActivity('Story complete — fail loved by the room');
-      toast('Story complete', 'Fail → encourage → they loved it. That’s the detection.', '🔥');
+      pushCreatorActivity('Story complete — chatVoo exciting → loved by the room');
+      toast('Story complete', 'Exciting → encourage → they loved it. That’s chatVoo.', '🔥');
       renderMoodPulse();
     }
   }, 250);
 
-  toast('Story demo', 'Fail → encourage → room loves the fail', '🎬');
+  toast('Story demo', 'Exciting → encourage → room loves it · chatVoo', '🎬');
   renderCreatorChat();
 }
 

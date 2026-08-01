@@ -1,0 +1,32 @@
+---
+description: Conventions for the vanilla Kick Circles / Emotional Chat prototype
+globs: kick-circles-demo/**/*.{html,css,js,md}
+alwaysApply: false
+---
+
+# kick-circles-demo stack
+
+Vanilla only: `index.html` + `styles.css` + `app.js`. No build step, no frameworks, no new deps unless explicitly requested.
+
+## Evolve, don't fork
+
+- Reactions: extend `REACTIONS`, `S.msgReacts`, `S.myReacts`, `addReaction`, `renderChat`
+- Room mood: `reactionLog` + `reactionWindow(ms)` → `roomMood` → shared wash CSS on `.chat-rail`
+- Stream mood: simulated beats + Set beat controls → hints / Follow — not CV/audio ML
+- Room Studio: extend Style / `S.look` into `roomTheme` (tint, accent, glow); Follow default ON
+- Pulse + wash + hints share one aggregate — never duplicate counts
+- State: `KEY = 'kickCircles.v4'` via `load`/`save`; bump key only on breaking schema
+- Preserve header ↺ reset and seeded demo chat
+
+## UI patterns
+
+- Kick-dark surfaces; Kick green (`--kick`) for brand; room hues = additive glow over personal Studio base
+- Hint chip is non-blocking; never hard-override Studio when Follow is OFF
+- Mark new surfaces with existing `.new-tag`
+- Don't bury Pulse only inside live-event tabs; don't expand Mood Map for P0
+
+## Demo hygiene
+
+- Voice is P1 (sim-first if built)
+- Avoid features that break the 2-min script in `PRD-EMOTIONAL-CHAT.md`
+- Park Pass/quests/ranks/Circles map work unless the user asks — leave code intact

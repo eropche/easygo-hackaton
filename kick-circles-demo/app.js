@@ -30,6 +30,9 @@ const DEFAULT = {
   missionCounts: { 'irl-chaos': 36, 'late-night': 11, 'clip-hunters': 0 },
   tasks: {},
   look: { avatar: '🐰', frame: 'kick', title: 'member', color: '#53fc18', effect: 'none', flair: 'none', bubble: 'plain' },
+  roomTheme: { tint: '', accent: '#53fc18', glow: 0.55 },
+  followMood: true,
+  streamMood: 'chill',
   msgReacts: {},
   myReacts: {},
   privacy: { hideMembership: true, showLeaderboard: false, slowMode: true, ageGate: true },
@@ -118,10 +121,10 @@ const CHAT_STREAM = [
 ];
 
 const CLIPS = [
-  { icon: '🏙️', title: 'Rooftop jump', by: 'Clavicular', reacts: 247 },
-  { icon: '🎰', title: 'Arcade meltdown', by: 'N3on', reacts: 189 },
-  { icon: '🍜', title: 'Spicy noodle dare', by: 'Clavicular', reacts: 156 },
-  { icon: '🚕', title: 'Taxi negotiation', by: 'Placeholder1', reacts: 121 },
+  { icon: '🏙️', title: 'Rooftop jump', short: 'Jump', by: 'Clavicular', reacts: 247 },
+  { icon: '🎰', title: 'Arcade meltdown', short: 'Arcade', by: 'N3on', reacts: 189 },
+  { icon: '🍜', title: 'Spicy noodle dare', short: 'Noodles', by: 'Clavicular', reacts: 156 },
+  { icon: '🚕', title: 'Taxi negotiation', short: 'Taxi', by: 'Placeholder1', reacts: 121 },
 ];
 
 const TASKS = [
@@ -272,9 +275,13 @@ const LEADERBOARD = [
 ];
 
 const POLL = {
-  q: 'Where should the crew go next?',
-  sub: 'Circle poll · closes in 45s · 1,284 members',
-  options: [{ t: 'Arcade', v: 512 }, { t: 'Rooftop bar', v: 388 }, { t: 'Ramen alley', v: 244 }],
+  q: 'Next stop?',
+  sub: '45s · 1.2k',
+  options: [
+    { t: 'Arcade', ic: '🎰', v: 512 },
+    { t: 'Rooftop', ic: '🏙️', v: 388 },
+    { t: 'Ramen', ic: '🍜', v: 244 },
+  ],
 };
 
 const PREDICTION = {
@@ -306,6 +313,7 @@ function load() {
       return {
         ...d, ...p,
         look: { ...d.look, ...(p.look || {}) },
+        roomTheme: { ...d.roomTheme, ...(p.roomTheme || {}) },
         privacy: { ...d.privacy, ...(p.privacy || {}) },
         missionCounts: { ...d.missionCounts, ...(p.missionCounts || {}) },
       };
@@ -411,20 +419,100 @@ function renderHeader() {
 function renderStrip() {
   const c = CIRCLES[0];
   const pct = Math.round((S.missionCounts['irl-chaos'] / c.mission.max) * 100);
-  $('stripMission').textContent = `${pct}%`;
-  $('stripBar').style.width = `${pct}%`;
-  $('stripScore').textContent = S.score.toLocaleString();
+  if ($('stripMission')) $('stripMission').textContent = `${pct}%`;
+  if ($('stripBar')) $('stripBar').style.width = `${pct}%`;
+  if ($('stripScore')) $('stripScore').textContent = S.score.toLocaleString();
 }
 
 function renderClips() {
+  if (!$('clipsRow')) return;
   $('clipsRow').innerHTML = CLIPS.map((c) => `
-    <div class="clip-card">
-      <div class="clip-thumb">${c.icon}<span class="clip-reacts">🔥 ${c.reacts}</span></div>
-      <div class="clip-body"><div class="clip-title">${c.title}</div><div class="clip-by">${c.by}</div></div>
-    </div>`).join('');
+    <button type="button" class="clip-chip" title="${c.title} · ${c.by}">
+      <span class="clip-ic">${c.icon}</span>
+      <span class="clip-meta"><b>${c.short || c.title}</b><i>🔥${c.reacts}</i></span>
+    </button>`).join('');
 }
 
 const chatData = () => (activeChat === 'stream' ? CHAT_STREAM : CHAT_CIRCLE);
+
+/** Always-visible one-click reacts (no + picker). */
+const CORE_REACTS = ['🔥', '😂', '👀', '💀'];
+
+let pinnedMsg = null; // { id, author, text, color, badge, badgeText, until }
+let pinTimer = null;
+
+const GOOD_REACTS = new Set(['🔥', '😂', '👏']);
+const GOOD_WORDS = /you got this|w fail|peak|clip that|run it back|best stream|believe in you|hilarious|too nice/i;
+
+function findChatMessage(id) {
+  return CHAT_CIRCLE.find((m) => m.id === id) || CHAT_STREAM.find((m) => m.id === id) || null;
+}
+
+function messageEncourageScore(msg) {
+  if (!msg || msg.system) return 0;
+  const stored = S.msgReacts[msg.id] || {};
+  let score = 0;
+  GOOD_REACTS.forEach((e) => {
+    score += (msg.reacts && msg.reacts[e] || 0) + (stored[e] || 0);
+  });
+  if (GOOD_WORDS.test(msg.text || '')) score += 4;
+  return score;
+}
+
+function renderChatPin() {
+  const el = $('chatPin');
+  if (!el) return;
+  if (!pinnedMsg || Date.now() > pinnedMsg.until) {
+    el.hidden = true;
+    el.innerHTML = '';
+    return;
+  }
+  const badge = pinnedMsg.badge
+    ? `<span class="msg-badge b-${pinnedMsg.badge}">${pinnedMsg.badgeText}</span>`
+    : '';
+  el.hidden = false;
+  el.innerHTML = `
+    <div class="chat-pin-label">Pinned · good moment</div>
+    <div class="chat-pin-body">
+      ${badge}<span class="msg-author" style="color:${pinnedMsg.color || '#c9d6dc'}">${pinnedMsg.author}</span>
+      ${pinnedMsg.text}
+    </div>`;
+}
+
+function pinGoodMessage(msg, { force } = {}) {
+  if (!msg || msg.system) return;
+  const score = messageEncourageScore(msg);
+  const keywordHit = GOOD_WORDS.test(msg.text || '');
+  if (!force && !keywordHit && score < 5) return;
+  if (!force && keywordHit && score < 3) return;
+  if (pinnedMsg && pinnedMsg.id === msg.id && pinnedMsg.until > Date.now()) return;
+
+  pinnedMsg = {
+    id: msg.id,
+    author: msg.author,
+    text: msg.text,
+    color: msg.color,
+    badge: msg.badge,
+    badgeText: msg.badgeText,
+    until: Date.now() + 10000,
+  };
+  if (pinTimer) clearTimeout(pinTimer);
+  pinTimer = setTimeout(() => {
+    if (pinnedMsg && pinnedMsg.id === msg.id) {
+      pinnedMsg = null;
+      renderChatPin();
+    }
+  }, 10000);
+  renderChatPin();
+}
+
+function msgReactRow(msgId, all, mine) {
+  return CORE_REACTS.map((e) => {
+    const v = all[e] || 0;
+    const on = mine.includes(e) ? 'on' : '';
+    return `<button type="button" class="react-pill ${on}" data-react="${msgId}" data-emo="${e}">${e}${v ? ` ${v}` : ''}</button>`;
+  }).join('');
+}
 
 function renderChat() {
   if (activeChat === 'mood') applyChatMode();
@@ -434,40 +522,32 @@ function renderChat() {
       : 'Clavicular channel chat · standard Kick chat';
   }
 
+  renderChatPin();
+
   $('chatBody').innerHTML = chatData().map((m) => {
     if (m.system) return `<div class="msg system">${m.text}</div>`;
     const stored = S.msgReacts[m.id] || {};
     const all = {};
-    [...Object.keys(m.reacts || {}), ...Object.keys(stored)].forEach((k) => {
+    [...CORE_REACTS, ...Object.keys(m.reacts || {}), ...Object.keys(stored)].forEach((k) => {
       all[k] = ((m.reacts || {})[k] || 0) + (stored[k] || 0);
     });
     const mine = S.myReacts[m.id] || [];
-    const pills = Object.entries(all).filter(([, v]) => v > 0)
-      .map(([e, v]) => `<button class="react-pill ${mine.includes(e) ? 'on' : ''}" data-react="${m.id}" data-emo="${e}">${e} ${v}</button>`).join('');
+    const pills = msgReactRow(m.id, all, mine);
     const badge = m.badge ? `<span class="msg-badge b-${m.badge}">${m.badgeText}</span>` : '';
     const k = m.mine ? myLook() : null;
     const head = k
       ? `${k.flair}<span class="${k.nameCls}" style="${k.nameStyle}">${m.author}</span>`
       : `${badge}<span class="msg-author" style="color:${m.color || '#c9d6dc'}">${m.author}</span>`;
+    const pinned = pinnedMsg && pinnedMsg.id === m.id && pinnedMsg.until > Date.now();
     return `
-      <div class="${k ? k.cls : 'msg'}" style="${k ? k.style : ''}">
+      <div class="${k ? k.cls : 'msg'}${pinned ? ' is-pinned' : ''}" style="${k ? k.style : ''}">
         <div class="msg-line">${head}${m.text}</div>
-        <div class="msg-reacts">${pills}<button class="react-add" data-picker="${m.id}">+</button></div>
-        <div class="react-picker" id="pick-${m.id}">
-          ${REACTIONS.map((e) => `<button data-react="${m.id}" data-emo="${e}">${e}</button>`).join('')}
-        </div>
+        <div class="msg-reacts">${pills}</div>
       </div>`;
   }).join('');
 
   $('chatBody').scrollTop = $('chatBody').scrollHeight;
 
-  $('chatBody').querySelectorAll('[data-picker]').forEach((b) => {
-    b.onclick = () => {
-      const p = $(`pick-${b.dataset.picker}`);
-      document.querySelectorAll('.react-picker.open').forEach((o) => { if (o !== p) o.classList.remove('open'); });
-      p.classList.toggle('open');
-    };
-  });
   $('chatBody').querySelectorAll('[data-react]').forEach((b) => {
     b.onclick = () => addReaction(b.dataset.react, b.dataset.emo);
   });
@@ -477,16 +557,20 @@ function addReaction(msgId, emo) {
   S.myReacts[msgId] = S.myReacts[msgId] || [];
   S.msgReacts[msgId] = S.msgReacts[msgId] || {};
   const mine = S.myReacts[msgId];
+  let added = false;
 
   if (mine.includes(emo)) {
     mine.splice(mine.indexOf(emo), 1);
     S.msgReacts[msgId][emo] = Math.max(0, (S.msgReacts[msgId][emo] || 0) - 1);
     S.collective = Math.max(0, S.collective - 1);
+    removeReactionLog(emo);
   } else {
     mine.push(emo);
     S.msgReacts[msgId][emo] = (S.msgReacts[msgId][emo] || 0) + 1;
     S.reactionsGiven += 1;
     S.collective += 1;
+    pushReactionLog(emo);
+    added = true;
     if (REACT_MOOD[emo]) nudgeMood(REACT_MOOD[emo], 2, true);
     bumpTask('react');
   }
@@ -496,7 +580,12 @@ function addReaction(msgId, emo) {
   renderChat();
   renderHeader();
   renderCollective();
-  if (activeEvent === 'pulse') renderEvent();
+  onReactionChange();
+  if (added) {
+    bumpReactPill(msgId, emo);
+    const msg = findChatMessage(msgId);
+    if (msg) pinGoodMessage(msg);
+  }
 }
 
 function sendMessage(text) {
@@ -515,6 +604,542 @@ function sendMessage(text) {
   else renderMoodUI();
 }
 
+/* ─── LIVING ROOM — roomMood + streamMood ──────────────── */
+
+/** Sliding-window reaction events. Audience owns roomMood. Session-only (↺ clears). */
+let reactionLog = [];
+let lastHintBeat = null;
+let roomMoodTick = null;
+let beatTimelineTimer = null;
+let storyTimers = [];
+let storyRunning = false;
+let storyStartedAt = 0;
+let storyTickTimer = null;
+let storyAct = 0;
+
+const ROOM_WINDOW_MS = 60000;
+
+/** Thresholds: need ≥3 reacts in window; dominant share ≥40% to leave neutral. */
+const ROOM_MOOD_META = {
+  neutral: { label: 'Neutral', ic: '·', className: 'mood-neutral' },
+  hype: { label: 'Hyped', ic: '🔥', className: 'mood-hype' },
+  laugh: { label: 'Laughing', ic: '😂', className: 'mood-laugh' },
+  cool: { label: 'Cool / confused', ic: '💀', className: 'mood-cool' },
+};
+
+const STREAM_BEATS = {
+  hype: {
+    id: 'hype', label: 'Peaking', ic: '🔥',
+    hint: 'Stream is peaking — warm the room?',
+    accent: '#ff8a3d', tintHint: 'rgba(255,138,61,.12)',
+  },
+  chill: {
+    id: 'chill', label: 'Chill walk', ic: '🌙',
+    hint: 'Quiet stretch — cool the room?',
+    accent: '#5eb7ff', tintHint: 'rgba(94,183,255,.10)',
+  },
+  tense: {
+    id: 'tense', label: 'Tense', ic: '⚡',
+    hint: 'Tension rising — try cool blue?',
+    accent: '#7b9cff', tintHint: 'rgba(123,156,255,.12)',
+  },
+  cozy: {
+    id: 'cozy', label: 'Cozy', ic: '✨',
+    hint: 'Comfy moment — soft amber?',
+    accent: '#ffb020', tintHint: 'rgba(255,176,32,.12)',
+  },
+};
+
+const BEAT_TIMELINE = ['chill', 'hype', 'tense', 'cozy', 'hype'];
+
+function pushReactionLog(emo, n = 1) {
+  const t = Date.now();
+  for (let i = 0; i < n; i++) reactionLog.push({ emo, t });
+  if (reactionLog.length > 400) reactionLog = reactionLog.slice(-400);
+}
+
+function removeReactionLog(emo) {
+  for (let i = reactionLog.length - 1; i >= 0; i--) {
+    if (reactionLog[i].emo === emo) { reactionLog.splice(i, 1); break; }
+  }
+}
+
+function reactionWindow(ms = ROOM_WINDOW_MS) {
+  const cutoff = Date.now() - ms;
+  const counts = {};
+  REACTIONS.forEach((e) => { counts[e] = 0; });
+  reactionLog.forEach((r) => {
+    if (r.t >= cutoff) counts[r.emo] = (counts[r.emo] || 0) + 1;
+  });
+  return counts;
+}
+
+/**
+ * roomMood from audience reactions only.
+ * Sparse (<3) or no clear majority → neutral.
+ */
+function getRoomMood() {
+  const counts = reactionWindow();
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  if (total < 3) return { mood: 'neutral', counts, total, top: [] };
+
+  const ranked = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const [topEmo, topN] = ranked[0];
+  const share = topN / total;
+
+  let mood = 'neutral';
+  if (share >= 0.4) {
+    if (topEmo === '🔥') mood = 'hype';
+    else if (topEmo === '😂' || topEmo === '👏') mood = 'laugh';
+    else if (topEmo === '💀' || topEmo === '❓' || topEmo === '👀') mood = 'cool';
+  }
+
+  return {
+    mood,
+    counts,
+    total,
+    top: ranked.filter(([, n]) => n > 0).slice(0, 3),
+  };
+}
+
+function bumpReactPill(msgId, emo) {
+  requestAnimationFrame(() => {
+    const pill = document.querySelector(`[data-react="${msgId}"][data-emo="${emo}"]`);
+    if (!pill) return;
+    pill.classList.remove('pop');
+    void pill.offsetWidth;
+    pill.classList.add('pop');
+  });
+}
+
+function applyRoomTheme() {
+  const rail = document.querySelector('.chat-rail');
+  if (!rail) return;
+  const rt = S.roomTheme || DEFAULT.roomTheme;
+  rail.style.setProperty('--room-accent', rt.accent || '#53fc18');
+  rail.style.setProperty('--room-glow', String(rt.glow ?? 0.55));
+  if (rt.tint) {
+    rail.style.setProperty('--room-tint', rt.tint);
+    rail.style.background = `linear-gradient(${rt.tint}, ${rt.tint}), var(--surface)`;
+  } else {
+    rail.style.removeProperty('--room-tint');
+    rail.style.background = '';
+  }
+}
+
+function applySharedWash() {
+  const rail = document.querySelector('.chat-rail');
+  const players = document.querySelectorAll('.player');
+  const { mood } = getRoomMood();
+  const meta = ROOM_MOOD_META[mood] || ROOM_MOOD_META.neutral;
+  ['mood-neutral', 'mood-hype', 'mood-laugh', 'mood-cool'].forEach((c) => {
+    if (rail) rail.classList.remove(c);
+    players.forEach((p) => p.classList.remove(c));
+  });
+  if (rail) rail.classList.add(meta.className);
+  players.forEach((p) => p.classList.add(meta.className));
+  applyRoomTheme();
+}
+
+function showMoodHint(force = false) {
+  const chip = $('moodHintChip');
+  if (!chip) return;
+  const beat = STREAM_BEATS[S.streamMood] || STREAM_BEATS.chill;
+  if (!force && lastHintBeat === S.streamMood && chip.classList.contains('show')) return;
+
+  lastHintBeat = S.streamMood;
+  chip.innerHTML = `
+    <span class="hint-ic">${beat.ic}</span>
+    <span class="hint-text">${beat.hint}</span>
+    <button type="button" class="hint-accept" id="hintAccept">Accept</button>
+    <button type="button" class="hint-dismiss" id="hintDismiss">Dismiss</button>`;
+  chip.classList.add('show');
+
+  const accept = $('hintAccept');
+  const dismiss = $('hintDismiss');
+  if (accept) accept.onclick = () => { applyStreamPalette(true); hideMoodHint(); };
+  if (dismiss) dismiss.onclick = () => hideMoodHint();
+}
+
+function hideMoodHint() {
+  const chip = $('moodHintChip');
+  if (chip) chip.classList.remove('show');
+}
+
+function applyStreamPalette(fromAccept, { quiet } = {}) {
+  const beat = STREAM_BEATS[S.streamMood] || STREAM_BEATS.chill;
+  S.roomTheme = S.roomTheme || { ...DEFAULT.roomTheme };
+  S.roomTheme.accent = beat.accent;
+  if (beat.tintHint) S.roomTheme.tint = beat.tintHint;
+  save();
+  applyRoomTheme();
+  if (!quiet) {
+    if (fromAccept) toast('Room lighting', beat.hint.replace('?', ''), beat.ic);
+    else toast('Follow mode', `Room followed ${beat.label}`, beat.ic);
+  }
+  if ($('styleModal')?.classList.contains('open')) renderStyle();
+}
+
+function setStreamMood(id, { silent } = {}) {
+  if (!STREAM_BEATS[id]) return;
+  S.streamMood = id;
+  save();
+  renderMoodPulse();
+  if (activeEvent === 'pulse') renderEvent();
+
+  if (S.followMood) {
+    applyStreamPalette(false, { quiet: !!silent });
+    hideMoodHint();
+  } else if (!silent) {
+    showMoodHint(true);
+  }
+}
+
+function burstReactions(emo = '🔥', n = 8) {
+  pushReactionLog(emo, n);
+  const list = CHAT_CIRCLE.filter((m) => !m.system);
+  const target = list[list.length - 1];
+  if (target) {
+    S.msgReacts[target.id] = S.msgReacts[target.id] || {};
+    S.msgReacts[target.id][emo] = (S.msgReacts[target.id][emo] || 0) + n;
+    save();
+    renderChat();
+  }
+  if (REACT_MOOD[emo]) nudgeMood(REACT_MOOD[emo], Math.min(6, n), true);
+  onReactionChange();
+  toast('Demo burst', `${n}× ${emo} into the room`, emo);
+}
+
+function onReactionChange() {
+  applySharedWash();
+  renderMoodPulse();
+  renderCreatorChat();
+  if (activeEvent === 'pulse') renderEvent();
+}
+
+function seedReactionLog() {
+  const now = Date.now();
+  const seed = [
+    ['🔥', 5], ['😂', 3], ['👀', 2], ['🔥', 2], ['👏', 1],
+  ];
+  seed.forEach(([emo, n], i) => {
+    for (let j = 0; j < n; j++) {
+      reactionLog.push({ emo, t: now - (8000 + i * 2000 + j * 400) });
+    }
+  });
+}
+
+function startRoomMoodTick() {
+  if (roomMoodTick) clearInterval(roomMoodTick);
+  roomMoodTick = setInterval(() => {
+    applySharedWash();
+    renderMoodPulse();
+  }, 1000);
+}
+
+function startBeatTimeline() {
+  if (beatTimelineTimer) clearInterval(beatTimelineTimer);
+  let i = 0;
+  beatTimelineTimer = setInterval(() => {
+    i = (i + 1) % BEAT_TIMELINE.length;
+    setStreamMood(BEAT_TIMELINE[i], { silent: true });
+  }, 45000);
+}
+
+function resetLivingRoomSession() {
+  reactionLog = [];
+  lastHintBeat = null;
+  hideMoodHint();
+}
+
+/* ─── FAIL → ENCOURAGE STORY DEMO ──────────────────────── */
+
+const STORY_BASE_CHAT = [
+  { id: 'story-sys', system: true, text: 'IRL rooftop challenge · story demo · reactions drive roomMood' },
+  { id: 'story-m0', author: 'NightOwl', badge: 'cap', badgeText: 'CAPTAIN', color: '#ffb020', text: 'he lining up the jump…', reacts: { '👀': 4 } },
+];
+
+const STORY_DEMO = {
+  duration: 48000,
+  acts: [
+    { at: 0, act: 1, chip: 'Act 1 · Low', caption: 'Streamer is down — room goes quiet', beat: 'tense', viewers: 12481 },
+    { at: 12000, act: 2, chip: 'Act 2 · Encourage', caption: 'Chat is lifting him up', beat: 'cozy', viewers: 13120 },
+    { at: 28000, act: 3, chip: 'Act 3 · Loved it', caption: 'They liked the real moment — room is peaking', beat: 'hype', viewers: 14890 },
+  ],
+  messages: [
+    { at: 800, author: 'Clavicular', badge: 'stream', badgeText: 'STREAMER', color: '#53fc18', text: 'man… that one stung. feeling kinda low rn', reacts: {} },
+    { at: 2200, author: 'TokyoDrift', badge: 'vip', badgeText: 'VIP', color: '#ff5c8a', text: 'oh nooo', reacts: { '💀': 2 } },
+    { at: 3800, author: 'gg_enjoyer', text: 'L', reacts: { '💀': 3 } },
+    { at: 5200, author: 'KEKWKing', text: 'unlucky man', reacts: { '👀': 2 } },
+    { at: 7000, author: 'chatlurker', text: 'he looks actually upset', reacts: { '👀': 4 } },
+    { at: 9000, author: 'Mod_ChaosBot', badge: 'mod', badgeText: 'MOD', color: '#00d488', text: 'breathe — chat stay kind', reacts: {} },
+
+    { at: 12500, author: 'PixelPam', badge: 'sub', badgeText: 'SUB 3', color: '#b06cff', text: 'you got this 🔥', reacts: { '🔥': 5, '👏': 3 } },
+    { at: 14200, author: 'NightOwl', badge: 'cap', badgeText: 'CAPTAIN', color: '#ffb020', text: 'W fail honestly', reacts: { '😂': 4, '👏': 2 } },
+    { at: 15800, author: 'ClipLord', badge: 'sub', badgeText: 'SUB 8', color: '#b06cff', text: 'that was actually hilarious — run it back', reacts: { '🔥': 6 } },
+    { at: 17500, author: 'orbitron', text: 'we believe in you', reacts: { '👏': 5 } },
+    { at: 19200, author: 'neon_nova', text: 'best content is when it goes wrong', reacts: { '🔥': 4, '😂': 3 } },
+    { at: 21000, author: 'StreetCam', text: 'chat is warmer than he feels rn', reacts: { '👀': 2, '🔥': 3 } },
+    { at: 23500, author: 'Clavicular', badge: 'stream', badgeText: 'STREAMER', color: '#53fc18', text: 'okay… okay you guys are too nice', reacts: { '👏': 8 } },
+
+    { at: 29000, author: 'KEKWKing', text: 'PEAK CONTENT', reacts: { '🔥': 9, '😂': 5 } },
+    { at: 30800, author: 'CutKing', text: 'CLIP THAT', reacts: { '🔥': 7 } },
+    { at: 32500, author: 'ReelRat', text: 'best stream all week', reacts: { '🔥': 6, '👏': 3 } },
+    { at: 34800, author: 'MoonMile', text: 'they liked the fail more than the jump LMAO', reacts: { '😂': 8 } },
+    { at: 38000, author: 'Clavicular', badge: 'stream', badgeText: 'STREAMER', color: '#53fc18', text: 'fine — running it back. y’all wild', reacts: { '🔥': 11 } },
+    { at: 42000, author: 'NightOwl', badge: 'cap', badgeText: 'CAPTAIN', color: '#ffb020', text: 'room is peaking — this is the loop', reacts: { '🔥': 4 } },
+  ],
+  bursts: [
+    { at: 2500, emo: '💀', n: 3 },
+    { at: 4500, emo: '👀', n: 4 },
+    { at: 8000, emo: '💀', n: 2 },
+    { at: 13000, emo: '👏', n: 6 },
+    { at: 14500, emo: '🔥', n: 8 },
+    { at: 17000, emo: '😂', n: 5 },
+    { at: 19500, emo: '🔥', n: 7 },
+    { at: 22000, emo: '👏', n: 5 },
+    { at: 29500, emo: '🔥', n: 10 },
+    { at: 31000, emo: '😂', n: 8 },
+    { at: 34000, emo: '🔥', n: 9 },
+    { at: 38500, emo: '🔥', n: 6 },
+  ],
+};
+
+function clearStoryTimers() {
+  storyTimers.forEach((t) => clearTimeout(t));
+  storyTimers = [];
+  if (storyTickTimer) { clearInterval(storyTickTimer); storyTickTimer = null; }
+}
+
+function stopStoryDemo() {
+  clearStoryTimers();
+  storyRunning = false;
+  const btn = $('storyDemoBtn');
+  if (btn) {
+    btn.textContent = '▶ Play story';
+    btn.classList.remove('running');
+  }
+}
+
+function setStoryScene(act) {
+  storyAct = act;
+  document.querySelectorAll('.story-scene').forEach((img) => {
+    img.classList.toggle('on', +img.dataset.act === act);
+  });
+}
+
+function setStoryUI({ chip, caption, viewers }) {
+  if (chip) {
+    if ($('storyAct')) $('storyAct').textContent = chip;
+    if ($('cdStoryAct')) $('cdStoryAct').textContent = chip;
+  }
+  if (caption) {
+    if ($('storyCaption')) $('storyCaption').textContent = caption;
+    if ($('cdStoryCaption')) $('cdStoryCaption').textContent = caption;
+  }
+  if (viewers) {
+    const v = `👁 ${viewers.toLocaleString()}`;
+    if ($('storyViewers')) $('storyViewers').textContent = v;
+    if ($('cdPreviewViewers')) $('cdPreviewViewers').textContent = v;
+    if ($('cdViewers')) $('cdViewers').textContent = viewers.toLocaleString();
+  }
+}
+
+function pruneStoryChat() {
+  for (let i = CHAT_CIRCLE.length - 1; i >= 0; i--) {
+    if (CHAT_CIRCLE[i].story) CHAT_CIRCLE.splice(i, 1);
+  }
+}
+
+function injectStoryMessage(m) {
+  const id = `story-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  CHAT_CIRCLE.push({
+    id,
+    story: true,
+    author: m.author,
+    badge: m.badge,
+    badgeText: m.badgeText,
+    color: m.color,
+    text: m.text,
+    reacts: { ...(m.reacts || {}) },
+    system: !!m.system,
+  });
+  if (activeChat === 'circle') renderChat();
+  renderCreatorChat();
+  pushCreatorActivity(`${m.author}: ${m.text}`);
+  const last = CHAT_CIRCLE[CHAT_CIRCLE.length - 1];
+  if (last) pinGoodMessage(last);
+}
+
+function storyHasMoodGap() {
+  const room = getRoomMood().mood;
+  const show = S.streamMood;
+  const roomHot = room === 'hype' || room === 'laugh';
+  const showLow = show === 'tense' || show === 'cozy';
+  return roomHot && showLow;
+}
+
+function renderMoodPulse() {
+  const el = $('moodPulseCard');
+  if (!el) return;
+  const room = getRoomMood();
+  const meta = ROOM_MOOD_META[room.mood] || ROOM_MOOD_META.neutral;
+  const beat = STREAM_BEATS[S.streamMood] || STREAM_BEATS.chill;
+  const gap = storyHasMoodGap();
+  if (gap) pushCreatorActivityOnce('Gap: room warmer than streamer feels');
+
+  const topHtml = room.top.length
+    ? room.top.map(([e, n]) => `<span class="mp-emo">${e} <b>${n}</b></span>`).join('')
+    : '<span class="mp-emo muted">waiting for reacts…</span>';
+
+  const showLabel = S.streamMood === 'tense'
+    ? `${beat.ic} Upset / tense`
+    : S.streamMood === 'cozy'
+      ? `${beat.ic} Recovering`
+      : `${beat.ic} ${beat.label}`;
+
+  el.innerHTML = `
+    <div class="mp-head">
+      <span class="mp-kicker">Mood Pulse <span class="new-tag">CREATOR</span></span>
+      <div class="mp-actions">
+        <button type="button" class="mp-mini" id="pulseStoryBtn">${storyRunning ? 'Running…' : '▶ Story'}</button>
+        <button type="button" class="mp-mini" id="burstHypeBtn" title="Demo burst">Burst 🔥</button>
+      </div>
+    </div>
+    <div class="mp-row">
+      <div class="mp-block">
+        <small>PEOPLE · roomMood</small>
+        <div class="mp-label ${meta.className}">${meta.ic} ${meta.label}</div>
+        <div class="mp-bar"><span class="${meta.className}" style="width:${room.total ? Math.min(100, 20 + room.total * 8) : 8}%"></span></div>
+      </div>
+      <div class="mp-block">
+        <small>SHOW · streamMood</small>
+        <div class="mp-label">${showLabel}</div>
+        <div class="mp-beats">
+          ${Object.values(STREAM_BEATS).map((b) =>
+            `<button type="button" class="mp-beat ${S.streamMood === b.id ? 'on' : ''}" data-beat="${b.id}">${b.ic}</button>`
+          ).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="mp-gap ${gap ? 'show' : ''}" id="moodGapLine">
+      Audience loves the fail — room warmer than the streamer feels
+    </div>
+    <div class="mp-top">
+      <small>Top reacts · 60s</small>
+      <div class="mp-emos">${topHtml}</div>
+    </div>
+    <div class="mp-foot">
+      <span>👁 ${1240 + room.total * 3} in room · ~${180 + Math.floor(room.total / 2)} lurkers</span>
+    </div>`;
+
+  const burst = $('burstHypeBtn');
+  if (burst) burst.onclick = () => burstReactions('🔥', 8);
+  const ps = $('pulseStoryBtn');
+  if (ps) ps.onclick = () => startStoryDemo();
+  el.querySelectorAll('[data-beat]').forEach((b) => {
+    b.onclick = () => setStreamMood(b.dataset.beat);
+  });
+}
+
+let lastGapToast = false;
+function pushCreatorActivityOnce(text) {
+  if (lastGapToast) return;
+  lastGapToast = true;
+  pushCreatorActivity(text);
+  setTimeout(() => { lastGapToast = false; }, 8000);
+}
+
+function startStoryDemo() {
+  stopStoryDemo();
+  storyRunning = true;
+  storyStartedAt = Date.now();
+  lastGapToast = false;
+
+  const btn = $('storyDemoBtn');
+  if (btn) {
+    btn.textContent = '↺ Replay story';
+    btn.classList.add('running');
+  }
+
+  pruneStoryChat();
+  // Replace visible circle chat with cold-open for the story
+  CHAT_CIRCLE.length = 0;
+  STORY_BASE_CHAT.forEach((m) => CHAT_CIRCLE.push({ ...m, reacts: { ...(m.reacts || {}) } }));
+
+  reactionLog = [];
+  S.msgReacts = {};
+  S.myReacts = {};
+  save();
+
+  activeChat = 'circle';
+  document.querySelectorAll('.chat-tab').forEach((x) => x.classList.toggle('active', x.dataset.chat === 'circle'));
+  applyChatMode();
+  renderChat();
+
+  setStoryScene(1);
+  setStreamMood('tense', { silent: true });
+  setStoryUI(STORY_DEMO.acts[0]);
+  onReactionChange();
+
+  STORY_DEMO.acts.forEach((a) => {
+    storyTimers.push(setTimeout(() => {
+      setStoryScene(a.act);
+      setStoryUI(a);
+      setStreamMood(a.beat, { silent: true });
+      renderMoodPulse();
+    }, a.at));
+  });
+
+  STORY_DEMO.messages.forEach((m) => {
+    storyTimers.push(setTimeout(() => injectStoryMessage(m), m.at));
+  });
+
+  STORY_DEMO.bursts.forEach((b) => {
+    storyTimers.push(setTimeout(() => {
+      pushReactionLog(b.emo, b.n);
+      const last = [...CHAT_CIRCLE].reverse().find((x) => !x.system);
+      if (last) {
+        S.msgReacts[last.id] = S.msgReacts[last.id] || {};
+        S.msgReacts[last.id][b.emo] = (S.msgReacts[last.id][b.emo] || 0) + b.n;
+        save();
+        if (activeChat === 'circle') renderChat();
+        renderCreatorChat();
+        if (GOOD_REACTS.has(b.emo)) pinGoodMessage(last);
+      }
+      if (REACT_MOOD[b.emo]) nudgeMood(REACT_MOOD[b.emo], Math.min(4, b.n), false);
+      onReactionChange();
+    }, b.at));
+  });
+
+  storyTickTimer = setInterval(() => {
+    const elapsed = Date.now() - storyStartedAt;
+    const pct = Math.min(100, (elapsed / STORY_DEMO.duration) * 100);
+    const sec = Math.floor(elapsed / 1000);
+    const tc = `0:${String(sec).padStart(2, '0')}`;
+    if ($('storyProgress')) $('storyProgress').style.width = `${pct}%`;
+    if ($('storyTimecode')) $('storyTimecode').textContent = tc;
+    if ($('cdProgress')) $('cdProgress').style.width = `${pct}%`;
+    if ($('cdTimecode')) $('cdTimecode').textContent = tc;
+    if ($('cdTimeLive')) $('cdTimeLive').textContent = tc;
+    if (elapsed >= STORY_DEMO.duration) {
+      clearInterval(storyTickTimer);
+      storyTickTimer = null;
+      storyRunning = false;
+      if (btn) {
+        btn.textContent = '↺ Replay story';
+        btn.classList.remove('running');
+      }
+      pushCreatorActivity('Story complete — fail loved by the room');
+      toast('Story complete', 'Fail → encourage → they loved it. That’s the detection.', '🔥');
+      renderMoodPulse();
+    }
+  }, 250);
+
+  toast('Story demo', 'Fail → encourage → room loves the fail', '🎬');
+  renderCreatorChat();
+}
+
 /* ─── LIVE EVENTS ──────────────────────────────────────── */
 
 function renderEvent() {
@@ -526,15 +1151,18 @@ function renderEvent() {
 function eventPoll() {
   const total = POLL.options.reduce((a, o) => a + o.v, 0) + (S.pollVote !== null ? 1 : 0);
   return `
-    <div class="event-title">🗳️ ${POLL.q}</div>
-    <div class="event-sub">${POLL.sub}</div>
-    ${POLL.options.map((o, i) => {
-      const v = o.v + (S.pollVote === i ? 1 : 0);
-      const pct = Math.round((v / total) * 100);
-      return `<button class="opt-btn ${S.pollVote === i ? 'picked' : ''}" data-poll="${i}">
-        <span class="opt-fill" style="width:${pct}%"></span><span>${o.t}</span><span>${pct}%</span></button>`;
-    }).join('')}
-    <div class="event-note">${S.pollVote !== null ? '✓ Voted · +30 XP' : 'Winning option is sent to the creator overlay'}</div>`;
+    <div class="event-title compact">🗳️ ${POLL.q} <small>${POLL.sub}</small></div>
+    <div class="poll-chips">
+      ${POLL.options.map((o, i) => {
+        const v = o.v + (S.pollVote === i ? 1 : 0);
+        const pct = Math.round((v / total) * 100);
+        return `<button class="poll-chip ${S.pollVote === i ? 'picked' : ''}" data-poll="${i}">
+          <span class="poll-ic">${o.ic || '•'}</span>
+          <span class="poll-t">${o.t}</span>
+          <span class="poll-pct">${pct}%</span>
+        </button>`;
+      }).join('')}
+    </div>`;
 }
 
 function eventPrediction() {
@@ -542,68 +1170,53 @@ function eventPrediction() {
   if (p.resolved) {
     const won = p.side === 0;
     return `
-      <div class="event-title">🎯 Prediction resolved</div>
-      <div class="event-sub">${PREDICTION.q}</div>
-      <div class="opt-btn ${won ? 'correct' : 'wrong'}"><span>${won ? 'You won' : 'You lost'}</span><span>${won ? `+${p.bet * 2} XP` : `−${p.bet} XP`}</span></div>
-      <div class="event-note">Payout splits the pool between everyone on the winning side.</div>`;
+      <div class="event-title compact">🎯 ${won ? 'Won' : 'Lost'} <small>${won ? `+${p.bet * 2} XP` : `−${p.bet} XP`}</small></div>`;
   }
   return `
-    <div class="event-title">🎯 ${PREDICTION.q}</div>
-    <div class="event-sub">${PREDICTION.sub}</div>
-    <div class="bet-row">${[50, 100, 200].map((b) => `<button class="bet-chip ${p.bet === b ? 'on' : ''}" data-bet="${b}">${b} XP</button>`).join('')}</div>
-    ${PREDICTION.options.map((o, i) => `<button class="opt-btn ${p.side === i ? 'picked' : ''}" data-pred="${i}"><span>${o}</span><span>${i === 0 ? '2.1×' : '1.8×'}</span></button>`).join('')}
-    ${p.side !== null ? '<button class="primary-btn sm" id="resolveBtn" style="width:100%;margin-top:6px">Resolve (demo)</button>' : ''}
-    <div class="event-note">Circle XP only — never Kicks. Status can't be bought.</div>`;
+    <div class="event-title compact">🎯 Make arcade? <small>${p.bet} XP</small></div>
+    <div class="poll-chips">
+      ${[50, 100, 200].map((b) => `<button class="poll-chip bet ${p.bet === b ? 'picked' : ''}" data-bet="${b}">${b}</button>`).join('')}
+      ${PREDICTION.options.map((o, i) => `<button class="poll-chip ${p.side === i ? 'picked' : ''}" data-pred="${i}"><span class="poll-ic">${i === 0 ? '✅' : '❌'}</span><span class="poll-t">${i === 0 ? 'Yes' : 'No'}</span></button>`).join('')}
+    </div>
+    ${p.side !== null ? '<button class="primary-btn sm" id="resolveBtn">Resolve</button>' : ''}`;
 }
 
 function eventStorm() {
   return `
-    <div class="event-title">😂 Emote Storm</div>
-    <div class="event-sub">Pick a side · highest count in 60s wins +50 XP</div>
-    <div class="storm-vs"><div><strong>${S.stormA}</strong><span>KEKW</span></div><div><strong>${S.stormB}</strong><span>HYPE</span></div></div>
-    ${S.stormTeam
-      ? `<button class="primary-btn sm" style="width:100%" id="spamBtn">Spam ${S.stormTeam.toUpperCase()} 😂</button>
-         <div class="event-note">You're on team ${S.stormTeam.toUpperCase()}</div>`
-      : `<div style="display:flex;gap:6px">
-          <button class="opt-btn" data-storm="kekw" style="margin:0"><span>Join KEKW</span></button>
-          <button class="opt-btn" data-storm="hype" style="margin:0"><span>Join HYPE</span></button></div>`}`;
+    <div class="event-title compact">😂 Storm <small>${S.stormA} vs ${S.stormB}</small></div>
+    <div class="poll-chips">
+      ${S.stormTeam
+        ? `<button class="poll-chip picked" id="spamBtn">Spam ${S.stormTeam.toUpperCase()}</button>`
+        : `<button class="poll-chip" data-storm="kekw"><span class="poll-ic">😂</span><span class="poll-t">KEKW</span></button>
+           <button class="poll-chip" data-storm="hype"><span class="poll-ic">🔥</span><span class="poll-t">HYPE</span></button>`}
+    </div>`;
 }
 
 function eventQuiz() {
   const done = S.quizAnswer !== null;
   return `
-    <div class="event-title">🧠 Daily Circle quiz</div>
-    <div class="event-sub">${QUIZ.q}</div>
-    ${QUIZ.options.map((o, i) => {
-      let cls = '';
-      if (done) cls = i === QUIZ.correct ? 'correct' : (i === S.quizAnswer ? 'wrong' : '');
-      return `<button class="opt-btn ${cls}" data-quiz="${i}" ${done ? 'disabled' : ''}><span>${o}</span></button>`;
-    }).join('')}
-    <div class="event-note">${done ? (S.quizAnswer === QUIZ.correct ? '✓ Correct · +120 XP' : 'Not quite · +20 XP for trying') : 'Feeds your Discovery score'}</div>`;
+    <div class="event-title compact">🧠 Quiz <small>${QUIZ.q.replace('Which connected creator streamed from Tokyo first?', 'Tokyo first?')}</small></div>
+    <div class="poll-chips">
+      ${QUIZ.options.map((o, i) => {
+        let cls = '';
+        if (done) cls = i === QUIZ.correct ? 'correct' : (i === S.quizAnswer ? 'wrong' : '');
+        return `<button class="poll-chip ${cls}" data-quiz="${i}" ${done ? 'disabled' : ''}><span class="poll-t">${o}</span></button>`;
+      }).join('')}
+    </div>`;
 }
 
 function eventPulse() {
-  const live = {};
-  REACTIONS.forEach((e) => { live[e] = PULSE_BASE[e]; });
-  Object.values(S.msgReacts).forEach((m) => {
-    Object.entries(m).forEach(([e, v]) => { live[e] = (live[e] || 0) + v; });
-  });
-  const max = Math.max(...Object.values(live));
-  const total = Object.values(live).reduce((a, b) => a + b, 0);
-  const top = Object.entries(live).sort((a, b) => b[1] - a[1])[0];
+  const room = getRoomMood();
+  const counts = room.counts;
+  const beat = STREAM_BEATS[S.streamMood] || STREAM_BEATS.chill;
+  const meta = ROOM_MOOD_META[room.mood] || ROOM_MOOD_META.neutral;
+  const top = room.top.slice(0, 3);
 
   return `
-    <div class="event-title">📊 Circle Pulse</div>
-    <div class="event-sub">Reaction mix · last 10 minutes · ${total} reactions</div>
-    <div class="pulse-rows">
-      ${REACTIONS.map((e) => `
-        <div class="pulse-row">
-          <span class="pulse-emo">${e}</span>
-          <div class="pulse-track"><span style="width:${(live[e] / max) * 100}%"></span></div>
-          <span class="pulse-val">${live[e]}</span>
-        </div>`).join('')}
-    </div>
-    <div class="event-note">Dominant signal <strong>${top[0]}</strong> — this is what powers clip discovery and the streamer's own insight card. Aggregate only; individual reaction history is never exposed.</div>`;
+    <div class="event-title compact">📊 ${meta.ic} ${meta.label} · ${beat.ic} ${beat.label}</div>
+    <div class="poll-chips">
+      ${top.map(([e, n]) => `<span class="poll-chip static"><span class="poll-ic">${e}</span><span class="poll-pct">${n}</span></span>`).join('') || '<span class="muted">no reacts yet</span>'}
+    </div>`;
 }
 
 function bindEvent() {
@@ -1707,18 +2320,46 @@ function previewMsg(text) {
 }
 
 function renderStyle() {
+  const rt = S.roomTheme || DEFAULT.roomTheme;
+  const accents = ['#53fc18', '#ff8a3d', '#ffd84a', '#5eb7ff', '#7b9cff', '#ffb020', '#b06cff', '#ff5c8a'];
+
   $('stylePreview').innerHTML = `
-    <div class="preview-head">Live preview</div>
-    <div class="preview-body">
+    <div class="preview-head">Live preview · living room</div>
+    <div class="preview-body preview-room" style="--room-accent:${rt.accent};box-shadow:inset 0 0 ${12 + (rt.glow || 0.5) * 28}px ${rt.accent}55">
       <div class="msg"><div class="msg-line"><span class="msg-author" style="color:#c9d6dc">TokyoDrift</span>wait is he actually going in</div></div>
       ${previewMsg('this is how my messages look now')}
-      <div class="msg"><div class="msg-line"><span class="msg-author" style="color:#b06cff">PixelPam</span>ok that flair goes hard</div></div>
+      <div class="msg"><div class="msg-line"><span class="msg-author" style="color:#b06cff">PixelPam</span>ok that room glow hits</div></div>
     </div>`;
 
   const swatches = `<div class="style-swatches">${COLORS.map((c) =>
     `<button class="swatch ${S.look.color === c ? 'sel' : ''}" data-style="color" data-v="${c}" style="background:${c}"></button>`).join('')}</div>`;
 
+  const roomAccent = `<div class="style-swatches">${accents.map((c) =>
+    `<button type="button" class="swatch ${rt.accent === c ? 'sel' : ''}" data-room="accent" data-v="${c}" style="background:${c}"></button>`).join('')}</div>`;
+
   $('styleSections').innerHTML = `
+    <div class="style-set room-studio">
+      <h4>Room Studio <span class="new-tag">NEW</span></h4>
+      <p class="muted small">Dress the chat rail. Shared mood wash layers on top.</p>
+      <label class="follow-row">
+        <span><b>Follow room mood</b><small>Auto-apply stream beat lighting hints</small></span>
+        <input type="checkbox" id="followMoodToggle" ${S.followMood !== false ? 'checked' : ''} />
+      </label>
+      <div class="room-field"><span>Accent</span>${roomAccent}</div>
+      <div class="room-field">
+        <span>Glow ${Math.round((rt.glow ?? 0.55) * 100)}%</span>
+        <input type="range" id="roomGlow" min="0" max="100" value="${Math.round((rt.glow ?? 0.55) * 100)}" />
+      </div>
+      <div class="room-field">
+        <span>Tint wash</span>
+        <div class="style-picks room-tints">
+          <button type="button" class="style-pick ${!rt.tint ? 'sel' : ''}" data-room="tint" data-v="">None</button>
+          <button type="button" class="style-pick ${rt.tint === 'rgba(255,138,61,.12)' ? 'sel' : ''}" data-room="tint" data-v="rgba(255,138,61,.12)">Warm</button>
+          <button type="button" class="style-pick ${rt.tint === 'rgba(94,183,255,.10)' ? 'sel' : ''}" data-room="tint" data-v="rgba(94,183,255,.10)">Cool</button>
+          <button type="button" class="style-pick ${rt.tint === 'rgba(255,176,32,.12)' ? 'sel' : ''}" data-room="tint" data-v="rgba(255,176,32,.12)">Amber</button>
+        </div>
+      </div>
+    </div>
     <div class="style-set"><h4>Name colour</h4>${swatches}</div>
     ${STYLE_SETS.map((s) => `
       <div class="style-set">
@@ -1736,11 +2377,11 @@ function renderStyle() {
 
   const locked = styleCatalog().filter((i) => !i.test(S));
   $('identityNote').innerHTML = `
-    <b>Why this is not just cosmetics.</b>
-    The same chat signals we read for insights — message volume, questions, reactions, clips —
-    are what grant these. Your look is evidence of how you show up.
-    ${locked.length ? `<br><br><span class="muted">${locked.length} still locked · next: ${locked[0].label} — ${locked[0].hint.toLowerCase()}</span>`
-      : '<br><br><span class="muted">Everything unlocked — all of it earned in chat.</span>'}`;
+    <b>Living room + identity.</b>
+    Room Studio is how you dress the space. Name flair is still earned from chat behaviour —
+    reactions, questions, clips. Hint ≠ hijack when Follow is off.
+    ${locked.length ? `<br><br><span class="muted">${locked.length} flair still locked · next: ${locked[0].label}</span>`
+      : '<br><br><span class="muted">All flair unlocked — earned in chat.</span>'}`;
 
   document.querySelectorAll('[data-style]').forEach((b) => {
     b.onclick = () => {
@@ -1752,6 +2393,37 @@ function renderStyle() {
       renderHeader();
     };
   });
+
+  document.querySelectorAll('[data-room]').forEach((b) => {
+    b.onclick = () => {
+      S.roomTheme = S.roomTheme || { ...DEFAULT.roomTheme };
+      S.roomTheme[b.dataset.room] = b.dataset.v;
+      save();
+      applyRoomTheme();
+      renderStyle();
+    };
+  });
+
+  const follow = $('followMoodToggle');
+  if (follow) {
+    follow.onchange = () => {
+      S.followMood = follow.checked;
+      save();
+      if (S.followMood) applyStreamPalette(false);
+      toast('Follow mode', S.followMood ? 'ON — beat hints auto-apply' : 'OFF — Accept to change lighting', '💡');
+    };
+  }
+  const glow = $('roomGlow');
+  if (glow) {
+    glow.oninput = () => {
+      S.roomTheme = S.roomTheme || { ...DEFAULT.roomTheme };
+      S.roomTheme.glow = (+glow.value) / 100;
+      save();
+      applyRoomTheme();
+      const label = glow.previousElementSibling;
+      if (label) label.textContent = `Glow ${glow.value}%`;
+    };
+  }
 }
 
 function openStyle() {
@@ -1766,13 +2438,16 @@ function applyChatMode() {
   const circle = activeChat === 'circle';
   $('moodPane').classList.toggle('on', mood);
   $('chatBody').style.display = mood ? 'none' : '';
-  document.querySelector('.live-event').style.display = mood ? 'none' : '';
+  if ($('chatPin')) $('chatPin').style.display = mood ? 'none' : '';
+  const liveEv = document.querySelector('.live-event');
+  if (liveEv) liveEv.style.display = '';
   if ($('cueStrip')) $('cueStrip').classList.toggle('on', circle);
   $('chatContext').textContent = mood
     ? 'Live mood read of Circle chat · moved by messages, cues, reactions'
     : (circle
       ? `Shared across 3 connected creators · ${S.privacy.slowMode ? 'slow mode' : 'open'} · type to move mood`
       : 'Clavicular channel chat · standard Kick chat');
+  if (!mood) renderChatPin();
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1848,24 +2523,82 @@ const OverworldBridge = (() => {
 
 function switchView(v) {
   document.querySelectorAll('.view').forEach((x) => x.classList.remove('active'));
-  $(`view-${v}`).classList.add('active');
+  const target = $(`view-${v}`);
+  if (target) target.classList.add('active');
   document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('active', b.dataset.view === v));
+  document.body.classList.toggle('creator-mode', v === 'creator');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
   if (v === 'circles') {
     OverworldBridge.ensureLoaded();
     OverworldBridge.send('focus');
-    // Open the My Circles dock once so the paradigm is visible beside the world
     const dock = $('circlesDock');
     if (dock && !dock.dataset.seen) { dock.classList.add('open'); dock.dataset.seen = '1'; }
   } else {
     OverworldBridge.send('blur');
+  }
+
+  if (v === 'creator') {
+    renderCreatorChat();
+    renderMoodPulse();
+    renderCreatorActivity();
   }
 }
 
 function renderAll() {
   renderHeader(); renderStrip(); renderChat(); renderEvent();
   renderCircles(); renderTasks(); renderPass(); renderProfile(); renderRanks(); renderNotifs();
+  applySharedWash();
+  renderMoodPulse();
+  renderCreatorChat();
+}
+
+/* ─── CREATOR DASHBOARD HELPERS ────────────────────────── */
+
+let creatorActivity = [];
+
+function pushCreatorActivity(text) {
+  creatorActivity.unshift({ text, t: Date.now() });
+  creatorActivity = creatorActivity.slice(0, 24);
+  renderCreatorActivity();
+}
+
+function renderCreatorActivity() {
+  const el = $('cdActivityFeed');
+  if (!el) return;
+  if (!creatorActivity.length) {
+    el.innerHTML = '<div class="cd-empty">Waiting for room signals…</div>';
+    return;
+  }
+  el.innerHTML = creatorActivity.map((a) =>
+    `<div class="cd-activity-row"><b>●</b> ${a.text}</div>`
+  ).join('');
+}
+
+function renderCreatorChat() {
+  const el = $('cdChatBody');
+  if (!el) return;
+  const list = CHAT_CIRCLE.length ? CHAT_CIRCLE : [];
+  el.innerHTML = list.map((m) => {
+    if (m.system) return `<div class="msg system">${m.text}</div>`;
+    const stored = S.msgReacts[m.id] || {};
+    const all = {};
+    CORE_REACTS.forEach((k) => {
+      all[k] = ((m.reacts || {})[k] || 0) + (stored[k] || 0);
+    });
+    const mine = S.myReacts[m.id] || [];
+    const pills = msgReactRow(m.id, all, mine);
+    const badge = m.badge ? `<span class="msg-badge b-${m.badge}">${m.badgeText}</span>` : '';
+    return `
+      <div class="msg">
+        <div class="msg-line">${badge}<span class="msg-author" style="color:${m.color || '#c9d6dc'}">${m.author}</span>${m.text}</div>
+        <div class="msg-reacts">${pills}</div>
+      </div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+  el.querySelectorAll('[data-react]').forEach((b) => {
+    b.onclick = () => addReaction(b.dataset.react, b.dataset.emo);
+  });
 }
 
 /* ─── INIT ─────────────────────────────────────────────── */
@@ -1873,9 +2606,12 @@ function renderAll() {
 function init() {
   checkStyleUnlocks(true);
   seedAgents();
+  seedReactionLog();
   renderClips();
   renderAll();
   OverworldBridge.init();
+  startRoomMoodTick();
+  startBeatTimeline();
 
   document.querySelectorAll('.nav-btn').forEach((b) => { b.onclick = () => switchView(b.dataset.view); });
   document.querySelectorAll('[data-goto]').forEach((b) => { b.onclick = () => switchView(b.dataset.goto); });
@@ -1952,7 +2688,56 @@ function init() {
     if (!e.target.closest('.notif-wrap')) $('notifPanel').classList.remove('open');
   });
 
-  $('resetBtn').onclick = () => { localStorage.removeItem(KEY); location.reload(); };
+  $('resetBtn').onclick = () => {
+    resetLivingRoomSession();
+    stopStoryDemo();
+    localStorage.removeItem(KEY);
+    location.reload();
+  };
+
+  if ($('storyDemoBtn')) $('storyDemoBtn').onclick = () => {
+    switchView('creator');
+    startStoryDemo();
+  };
+
+  if ($('cdChatForm')) {
+    $('cdChatForm').onsubmit = (e) => {
+      e.preventDefault();
+      const v = $('cdChatInput').value.trim();
+      if (!v) return;
+      CHAT_CIRCLE.push({
+        id: `cd${Date.now()}`, story: true, author: 'Clavicular',
+        badge: 'stream', badgeText: 'STREAMER', color: '#53fc18', text: v, reacts: {},
+      });
+      $('cdChatInput').value = '';
+      save();
+      if (activeChat === 'circle') renderChat();
+      renderCreatorChat();
+      pushCreatorActivity(`You: ${v}`);
+    };
+  }
+
+  if ($('cdQuickReact')) {
+    $('cdQuickReact').innerHTML = REACTIONS.map((e) => `<button type="button" data-cd-quick="${e}">${e}</button>`).join('');
+    $('cdQuickReact').querySelectorAll('[data-cd-quick]').forEach((b) => {
+      b.onclick = () => {
+        const list = CHAT_CIRCLE.filter((m) => !m.system);
+        const last = list[list.length - 1];
+        if (last) addReaction(last.id, b.dataset.cdQuick);
+        else burstReactions(b.dataset.cdQuick, 3);
+        pushCreatorActivity(`Quick react ${b.dataset.cdQuick}`);
+      };
+    });
+  }
+
+  if ($('cdGoLive')) {
+    $('cdGoLive').onclick = () => {
+      if ($('cdStatus')) $('cdStatus').textContent = 'LIVE';
+      if ($('cdLiveBadge')) $('cdLiveBadge').textContent = '● LIVE';
+      toast('You are live', 'Audience Stream + Creator Pulse are linked', '●');
+      pushCreatorActivity('Went live — session active');
+    };
+  }
 
   const now = new Date(); const end = new Date(now); end.setHours(24, 0, 0, 0);
   const d = end - now;

@@ -39,15 +39,21 @@ to that state — use it right before presenting.
 
 ## What's in it
 
-**Stream** — mock of the Kick stream page. Circle Strip under the player, Circle chat tab with
-per-message reactions, live event panel (Poll · Prediction · Emote Storm · Quiz · **Pulse**),
-and trending clips ranked by Circle reactions rather than views.
+**Stream (audience)** — Kick viewer page. Living-room chat rail, per-message reactions, shared mood
+wash, Room Studio. Story scenes play through as the audience would see them. No creator Pulse here.
 
-**Overworld** — walkable Animal-Crossing-style Circles world (WASD / click / E / M), loaded
-from `overworld/` inside an **iframe compartment** so its code cannot break Stream/Mood and
-vice versa. The best of **My Circles** lives in a host-side dock over the world: selectable
-Circle cards, affinity map, detection thresholds, Circle Score, weekly mission, collective
-unlock, privacy toggles, and “Find in overworld” travel. See `overworld/ISOLATION.md`.
+**Creator (streamer dashboard)** — Kick-style studio mock (sidebar, session stats, preview, chat
+monitor, channel actions). Hosts **Mood Pulse**, stream beat controls, gap alert
+(“room warmer than the streamer feels”), **Play story**, and activity feed.
+
+| Audience sees | Creator sees |
+|---|---|
+| Chat + reactions | Chat monitor + streamer reply |
+| Room wash / Studio | Mood Pulse + beat + gap |
+| Story as live look | Play / Replay story + session stats |
+
+**My Circles / Overworld** — walkable Circles world in an iframe compartment; host-side dock
+holds Circle cards, score, mission, privacy. See `overworld/ISOLATION.md`.
 
 **Quests** — 9 daily quests and 1 weekly co-op mission, streak multiplier, and a visible
 daily score cap that actually stops the score accruing.
@@ -73,16 +79,10 @@ role promotions.
 
 ## 2-minute demo path
 
-1. **↺ reset.** The invitation modal opens on its own — *"You've found your people."* with the
-   numbered reasons you qualified. Point out it's private, and that leaving is one tap away.
-2. **My Circles.** Click between all three Circles — the map, detection thresholds, score and
-   mission all change. Note Late Night Watchers sitting near the activity floor.
-3. **Stream.** Show the Circle Strip and the Circle chat tab. React 🔥 to a message.
-4. **Pulse tab.** Your reaction shows up in the aggregate histogram — this is the Chat Insights
-   half of the challenge, and what the streamer sees.
-5. **Vote in the poll, stake XP on the prediction.** A quest completes, XP lands.
-6. **Circle Pass tier unlocks**, a collectible appears on the profile shelf, rank moves.
-7. **Quests tab.** Point at the daily cap filling up: farming is capped by design.
+1. **Creator** tab → **Play story**. Watch Mood Pulse: fail (tense) → encourage (**gap**) → loved it.
+2. **Stream** tab → same story/chat as the audience: room wash + reactions, no Pulse chrome.
+3. **Room** (Studio) on audience chat to dress the living room.
+4. ↺ reset before the next run.
 
 ---
 

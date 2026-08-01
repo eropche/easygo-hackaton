@@ -272,6 +272,18 @@ body:has(#view-circles.active) .content{
 .storm-vs span{font-size:.68rem;color:var(--muted)}
 .event-note{font-size:.68rem;color:var(--muted);margin-top:6px}
 
+.instruments-toggle{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;
+  background:var(--surface-2);border:none;border-top:1px solid var(--border);
+  color:var(--muted);padding:7px 12px;cursor:pointer;font-size:.7rem;font-weight:800;
+}
+.instruments-toggle:hover{color:var(--text)}
+.instruments-toggle .inst-state{color:var(--kick);letter-spacing:.02em}
+.chat-rail.instruments-hidden .instruments-toggle .inst-state{color:var(--muted)}
+.chat-instruments{border-top:1px solid transparent}
+.chat-rail.instruments-hidden .chat-instruments{display:none}
+.chat-rail.instruments-hidden .chat-body{flex:1}
+
 .chat-toolbar{display:flex;gap:6px;padding:8px 10px 0}
 .tool-btn{flex:1;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:6px;border-radius:7px;font-size:.72rem;font-weight:700;cursor:pointer}
 .tool-btn:hover{border-color:var(--muted)}

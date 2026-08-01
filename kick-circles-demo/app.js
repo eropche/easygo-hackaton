@@ -1764,15 +1764,33 @@ function openStyle() {
 function applyChatMode() {
   const mood = activeChat === 'mood';
   const circle = activeChat === 'circle';
+  const rail = document.querySelector('.chat-rail');
   $('moodPane').classList.toggle('on', mood);
   $('chatBody').style.display = mood ? 'none' : '';
-  document.querySelector('.live-event').style.display = mood ? 'none' : '';
-  if ($('cueStrip')) $('cueStrip').classList.toggle('on', circle);
+  const live = document.querySelector('.live-event');
+  if (live) live.style.display = mood ? 'none' : '';
+  if ($('cueStrip')) $('cueStrip').classList.toggle('on', circle && !mood);
+  if ($('instrumentsToggle')) $('instrumentsToggle').style.display = mood ? 'none' : '';
+  if (rail && mood) rail.classList.remove('instruments-hidden');
   $('chatContext').textContent = mood
     ? 'Live mood read of Circle chat · moved by messages, cues, reactions'
     : (circle
       ? `Shared across 3 connected creators · ${S.privacy.slowMode ? 'slow mode' : 'open'} · type to move mood`
       : 'Clavicular channel chat · standard Kick chat');
+}
+
+function setInstrumentsHidden(hidden) {
+  const rail = document.querySelector('.chat-rail');
+  if (!rail) return;
+  rail.classList.toggle('instruments-hidden', hidden);
+  const btn = $('instrumentsToggle');
+  if (btn) {
+    btn.setAttribute('aria-expanded', hidden ? 'false' : 'true');
+    btn.title = hidden ? 'Show chat instruments' : 'Hide chat instruments';
+  }
+  if ($('instrumentsToggleState')) {
+    $('instrumentsToggleState').textContent = hidden ? 'Show ▸' : 'Hide ▾';
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1904,6 +1922,12 @@ function init() {
   $('mmLabels').classList.add('on');
   renderCueStrip();
   applyChatMode();
+  if ($('instrumentsToggle')) {
+    $('instrumentsToggle').onclick = () => {
+      const rail = document.querySelector('.chat-rail');
+      setInstrumentsHidden(!rail.classList.contains('instruments-hidden'));
+    };
+  }
   document.querySelectorAll('.event-tab').forEach((b) => {
     b.onclick = () => {
       activeEvent = b.dataset.event;

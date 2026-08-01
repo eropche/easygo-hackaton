@@ -1110,7 +1110,8 @@ const AtlasNormalizer = {
         label: safeLabel(raw.label, nodeId.split('.').pop(), 70),
         memberCount: safeNum(raw.member_count, safeArray(raw.top20_streamers).length, { min: 0 }),
         allMembers: safeArray(raw.all_member_channels).map(c => safeLabel(c, '', 80)).filter(Boolean),
-        top20: safeArray(raw.top20_streamers).slice(0, 20).map(t => ({
+        // atlas field stays top20_streamers; runtime halls show Top 5 only
+        top20: safeArray(raw.top20_streamers).slice(0, 5).map(t => ({
           rank: safeNum(t && t.rank, 0, { min: 0 }),
           channel: safeLabel(t && t.channel, '?', 80),
           magnitude: KNOWN_MAGNITUDES.has(t && t.watch_magnitude) ? t.watch_magnitude : 'UNKNOWN',
@@ -1212,6 +1213,84 @@ const AtlasNormalizer = {
       idx.categoryExplorerByNodeId.set(c.nodeId, c);
       idx.top20ByNodeId.set(c.nodeId, c.top20);
     }
+
+    // Ensure every taxonomy place can open a Top 5 room — including genre parents
+    // that have no category_explorer row (aggregate ranked members from descendants).
+    const TOP_HALL = 5;
+    const rankTopFromChannels = (channels) => {
+      const seen = new Set();
+      const creators = [];
+      for (const ch of channels) {
+        const key = String(ch || '').toLowerCase();
+        if (!key || seen.has(key)) continue;
+        const c = idx.streamerByChannel.get(key);
+        if (!c) continue;
+        seen.add(key);
+        creators.push(c);
+      }
+      creators.sort((a, b) => a.rank - b.rank);
+      return creators.slice(0, TOP_HALL).map(c => ({
+        rank: c.rank,
+        channel: c.channel,
+        magnitude: c.watchMagnitude,
+        language: c.language,
+        acv: c.metrics.averageConcurrentViewers,
+        homeNodeId: c.placement.primaryHomeNodeId,
+        confidence: c.scores.confidence
+      }));
+    };
+    const collectMemberChannels = (nodeId) => {
+      const out = new Set();
+      const stack = [nodeId];
+      while (stack.length) {
+        const id = stack.pop();
+        for (const ch of (idx.membersByNodeId.get(id) || [])) out.add(ch);
+        const cat = idx.categoryExplorerByNodeId.get(id);
+        if (cat) {
+          for (const ch of cat.allMembers || []) out.add(ch);
+          for (const t of cat.top20 || []) if (t.channel) out.add(t.channel);
+        }
+        for (const kid of (idx.taxonomyChildrenByParent.get(id) || [])) stack.push(kid.id);
+      }
+      return [...out];
+    };
+    for (const n of model.taxonomyNodes) {
+      if (n.level < 2) continue;
+      let cat = idx.categoryExplorerByNodeId.get(n.id);
+      let top = cat ? (cat.top20 || []).slice(0, TOP_HALL) : [];
+      const pool = collectMemberChannels(n.id);
+      if (top.length < TOP_HALL) {
+        const fromMembers = rankTopFromChannels(pool);
+        if (!top.length) top = fromMembers;
+        else {
+          const have = new Set(top.map(t => String(t.channel).toLowerCase()));
+          for (const t of fromMembers) {
+            if (top.length >= TOP_HALL) break;
+            if (!have.has(String(t.channel).toLowerCase())) top.push(t);
+          }
+        }
+      } else {
+        top = top.slice(0, TOP_HALL);
+      }
+      if (!top.length) continue;
+      if (!cat) {
+        cat = {
+          nodeId: n.id,
+          label: n.label,
+          memberCount: pool.length,
+          allMembers: pool,
+          top20: top,
+          synthesized: true
+        };
+        model.categoryExplorer.push(cat);
+        idx.categoryExplorerByNodeId.set(n.id, cat);
+      } else {
+        cat.top20 = top;
+        if (!cat.memberCount) cat.memberCount = pool.length || top.length;
+      }
+      idx.top20ByNodeId.set(n.id, cat.top20);
+    }
+
     for (const n of model.graphNodes) idx.graphNodeById.set(n.id, n);
     for (const e of model.graphEdges) {
       if (!idx.graphEdgesFrom.has(e.from)) idx.graphEdgesFrom.set(e.from, []);
@@ -1491,7 +1570,7 @@ const AtlasGeometry = {
         const target = placeById.get(nid);
         if (!target || geo.portals.length >= 320) return;
         const slot = grovePop.get(nid) || 0;
-        if (slot >= 8) return; // grove is full — the Hall of Twenty covers the rest
+        if (slot >= 8) return; // grove is full — the Top 5 room covers the rest
         grovePop.set(nid, slot + 1);
         const groveA = ((hashString(nid) % 628) / 100) + 1.9;
         const row = Math.floor(slot / 4), colA = groveA + ((slot % 4) - 1.5) * 0.24;
@@ -1766,7 +1845,7 @@ const AtlasGeometry = {
       const a = ((hashString(cat.nodeId) % 628) / 100) + 2.2;
       const hx = p.x + Math.cos(a) * p.r * 0.62, hy = p.y + Math.sin(a) * p.r * 0.62 * 0.6 + 26;
       p.hasHall = true;
-      geo.interactables.push({ id: 'hall.' + cat.nodeId, type: 'hall-entrance', x: hx, y: hy, title: 'Hall of Twenty · ' + cat.label, action: 'hall', nodeId: cat.nodeId });
+      geo.interactables.push({ id: 'hall.' + cat.nodeId, type: 'hall-entrance', x: hx, y: hy, title: 'Top 5 · ' + cat.label, action: 'hall', nodeId: cat.nodeId });
     }
     const hundred = geo.gates.find(g => g.hundred);
     const towerX = hundred ? hundred.x - 190 : 4300, towerY = hundred ? hundred.y + 150 : 1900;
@@ -3136,7 +3215,7 @@ function drawHallOfTwentyEntrance(o) {
   roundedRect(o.x - 34, o.y - 30, 68, 46, 12); ctx.fillStyle = '#31404A'; ctx.fill();
   roundedRect(o.x - 15, o.y - 16, 30, 32, 8); ctx.fillStyle = '#101A20'; ctx.fill();
   ctx.strokeStyle = '#FFD166'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(o.x, o.y - 16, 21, Math.PI, TAU); ctx.stroke();
-  text('XX', o.x, o.y - 34, 10, '#FFD166');
+  text('TOP5', o.x, o.y - 34, 9, '#FFD166');
   for (const dx of [-26, 26]) ellipse(o.x + dx, o.y - 22, 3, 4, '#FFE9A2');
 }
 
@@ -3413,7 +3492,7 @@ function drawBird() {
 }
 
 /* ================================================================
-   21 · ROOMS  (demo rooms + generated Halls of Twenty)
+   21 · ROOMS  (demo rooms + generated Top 5 halls)
    ================================================================ */
 function drawRoom() {
   const type = store.activeRoom;
@@ -3470,16 +3549,19 @@ function enterHall(nodeId) {
   const node = model.indexes.taxonomyById.get(nodeId);
   const axis = node ? node.axis : 'meta';
   closePanel();
-  const monuments = cat.top20.map((t, i) => ({
+  const top = (cat.top20 || []).slice(0, 5);
+  const spacing = 168;
+  const startX = room.w / 2 - ((Math.max(1, top.length) - 1) * spacing) / 2;
+  const monuments = top.map((t, i) => ({
     ...t,
-    x: 190 + (i % 10) * 114 + (Math.floor(i / 10) ? 55 : 0),
-    y: 300 + Math.floor(i / 10) * 190 + Math.sin(i * 1.2) * 16
+    x: startX + i * spacing,
+    y: 340 + Math.sin(i * 1.2) * 16
   }));
   store.hall = { nodeId, label: cat.label, axis, monuments, memberTotal: cat.memberCount, returnPos: { x: store.player.x, y: store.player.y } };
   store.scene = 'hall'; store.roomCooldown = 1;
   store.player.x = room.w / 2; store.player.y = room.h - 145;
   store.player.vx = store.player.vy = 0; store.clickTarget = null;
-  showZone('Hall of Twenty', cat.label + ' · ' + cat.memberCount + ' creators call this home', 'Entering hall');
+  showZone('Top 5', cat.label + ' · ' + cat.memberCount + ' creators call this home', 'Entering Top 5');
 }
 function leaveHall() {
   const back = store.hall && store.hall.returnPos;
@@ -3499,7 +3581,7 @@ function drawHallRoom() {
   ctx.strokeStyle = withAlpha(av.accent, .3); ctx.lineWidth = 5;
   ctx.beginPath(); ctx.ellipse(room.w / 2, room.h / 2 + 30, 560, 330, 0, 0, TAU); ctx.stroke();
   text(hall.label.toUpperCase(), room.w / 2, 130, 40, withAlpha('#FFF4CF', .92));
-  text('HALL OF TWENTY · ' + hall.memberTotal + ' MEMBERS IN TOTAL', room.w / 2, 165, 12, withAlpha(av.accent, .9));
+  text('TOP 5 · ' + hall.memberTotal + ' MEMBERS IN TOTAL', room.w / 2, 165, 12, withAlpha(av.accent, .9));
   for (const m of hall.monuments) {
     const msStyle = MAGNITUDE_STYLE[m.magnitude] || MAGNITUDE_STYLE.UNKNOWN;
     const near = store.nearby && store.nearby.monument === m;
@@ -4516,9 +4598,9 @@ function panelPlace(placeId) {
   }
   const cat = model && model.indexes.categoryExplorerByNodeId.get(placeId);
   if (cat && cat.top20.length) {
-    appendHeading('hall of twenty');
-    appendMiniCard({ title: cat.memberCount + ' creators call this home', copy: 'top of the hall: ' + cat.top20.slice(0, 3).map(t => '#' + t.rank + ' ' + t.channel).join(' · ') });
-    appendAction({ label: '▦ step inside the Hall of Twenty', action: 'enter-hall', data: { node: placeId } });
+    appendHeading('top 5');
+    appendMiniCard({ title: cat.memberCount + ' creators call this home', copy: 'top of the room: ' + cat.top20.slice(0, 5).map(t => '#' + t.rank + ' ' + t.channel).join(' · ') });
+    appendAction({ label: '▦ step inside the Top 5', action: 'enter-hall', data: { node: placeId } });
   }
   const members = model && model.indexes.membersByNodeId.get(placeId);
   if (members && members.length) appendTagRow(members.slice(0, 8).map(m => ({ text: m, tone: 'cream' })));

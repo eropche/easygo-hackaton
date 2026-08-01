@@ -14,13 +14,11 @@
 <header class="topbar">
   <div class="brand">
     <span class="kick-logo">KICK</span>
-    <span class="brand-divider"></span>
-    <span class="brand-sub">Circles</span>
   </div>
 
   <nav class="nav" id="mainNav">
+    <button class="nav-btn" data-view="circles">Circles Overworld</button>
     <button class="nav-btn active" data-view="stream">Stream</button>
-    <button class="nav-btn" data-view="circles">Overworld</button>
     <button class="nav-btn" data-view="quests">Quests</button>
     <button class="nav-btn" data-view="pass">Circle Pass</button>
     <button class="nav-btn" data-view="profile">Profile</button>
@@ -156,30 +154,37 @@
           <button class="primary-btn sm" id="moodExpand">Open full Mood Map</button>
         </div>
 
-        <!-- LIVE EVENT -->
-        <div class="live-event">
-          <div class="event-tabs" id="eventTabs">
-            <button class="event-tab active" data-event="poll">Poll</button>
-            <button class="event-tab" data-event="prediction">Prediction</button>
-            <button class="event-tab" data-event="storm">Storm</button>
-            <button class="event-tab" data-event="quiz">Quiz</button>
-            <button class="event-tab" data-event="pulse">Pulse</button>
+        <button class="instruments-toggle" id="instrumentsToggle" type="button" aria-expanded="true" title="Hide chat instruments">
+          <span class="inst-label">Instruments</span>
+          <span class="inst-state" id="instrumentsToggleState">Hide ▾</span>
+        </button>
+
+        <div class="chat-instruments" id="chatInstruments">
+          <!-- LIVE EVENT -->
+          <div class="live-event">
+            <div class="event-tabs" id="eventTabs">
+              <button class="event-tab active" data-event="poll">Poll</button>
+              <button class="event-tab" data-event="prediction">Prediction</button>
+              <button class="event-tab" data-event="storm">Storm</button>
+              <button class="event-tab" data-event="quiz">Quiz</button>
+              <button class="event-tab" data-event="pulse">Pulse</button>
+            </div>
+            <div class="event-body" id="eventBody"></div>
           </div>
-          <div class="event-body" id="eventBody"></div>
-        </div>
 
-        <div class="chat-toolbar">
-          <button class="tool-btn" title="Channel Points">◆ 1,240</button>
-          <button class="tool-btn style-tool" id="styleBtn" title="Style your chat">🎨 Style <span class="new-tag">NEW</span></button>
-          <button class="tool-btn circle-tool" data-goto="quests">◉ Circle</button>
-        </div>
+          <div class="chat-toolbar">
+            <button class="tool-btn" title="Channel Points">◆ 1,240</button>
+            <button class="tool-btn style-tool" id="styleBtn" title="Style your chat">🎨 Style <span class="new-tag">NEW</span></button>
+            <button class="tool-btn circle-tool" data-goto="quests">◉ Circle</button>
+          </div>
 
-        <div class="quick-react" id="quickReact"></div>
+          <div class="quick-react" id="quickReact"></div>
 
-        <!-- STREAMER CUES — land as real Circle messages -->
-        <div class="cue-strip" id="cueStrip">
-          <span class="cue-label">Streamer cue</span>
-          <div class="cue-btns" id="cueBtns"></div>
+          <!-- STREAMER CUES — land as real Circle messages -->
+          <div class="cue-strip" id="cueStrip">
+            <span class="cue-label">Streamer cue</span>
+            <div class="cue-btns" id="cueBtns"></div>
+          </div>
         </div>
 
         <form class="chat-input-row" id="chatForm">

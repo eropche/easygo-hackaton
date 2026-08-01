@@ -284,8 +284,8 @@ html.embed .hall-hud{top:max(10px,env(safe-area-inset-top))}
       <button type="button" class="hall-cat" data-cat="chilling">chilling</button>
     </div>
     <div class="hall-hud-row">
-      <label class="hall-live-lab"><input type="checkbox" id="hallLiveToggle" /> Live firehose</label>
-      <span class="hall-live-note" id="hallLiveNote">mock feed</span>
+      <label class="hall-live-lab"><input type="checkbox" id="hallLiveToggle" /> Firehose bubbles</label>
+      <span class="hall-live-note" id="hallLiveNote">plain chat</span>
     </div>
   </div>
 
@@ -3584,7 +3584,9 @@ function drawRoomObject(o, type) {
 }
 
 /* ================================================================
-   21b · TOP 5 FIREHOSE  (mock chat lanes · live toggle stub)
+   21b · TOP 5 FIREHOSE
+   Toggle OFF → plain linear chat (default)
+   Toggle ON  → Pit-style rising/merging message clouds + live Kick
    ================================================================ */
 const HALL_LANES = 5;
 const FIREHOSE_CATS = ['mood', 'vibe', 'strategy', 'chilling'];
@@ -3595,14 +3597,112 @@ const FIREHOSE_POOLS = {
   chilling: ['hey chat', 'just vibing', 'brb snack', 'first time here', 'love this circle', 'good morning', 'who\'s new', 'sending hugs', 'slow mode gang', 'lurking politely', 'thanks for the company', 'nice and easy']
 };
 const FIREHOSE_USERS = ['pogfan', 'nightowl', 'clipgod', 'lurker', 'mod_sara', 'ember', 'train', 'pixel', 'koi', 'vex', 'moss', 'nova'];
+const FIREHOSE_MERGE_MS = 8000;
+const FIREHOSE_MAX_CLOUDS = 22;
+const FIREHOSE_MAX_FEED = 32;
+const FIREHOSE_QUIET_MOCK_MS = 5000;
 
-function firehoseLivePref() { return !!AtlasStorage.getPref('firehoseLive', false); }
+/** Pref: firehose bubbles ON (Pit clouds + live Kick). OFF = plain chat. */
+function firehoseBubblesPref() { return !!AtlasStorage.getPref('firehoseLive', false); }
+function firehoseLivePref() { return firehoseBubblesPref(); } // alias for atlas settings panel
+function firehoseShouldMock() {
+  if (!firehoseBubblesPref()) return true; // plain chat always uses mock generator
+  if (HallLive.status === 'err' || HallLive.status === 'off') return true;
+  if (HallLive.status === 'connecting') return false;
+  // live but quiet rooms: after a short wait, keep Pit alive with mock clouds
+  if (HallLive.status === 'live' && HallLive.msgCount === 0) {
+    return HallLive.liveSince && (performance.now() - HallLive.liveSince) > FIREHOSE_QUIET_MOCK_MS;
+  }
+  // live with real traffic: no mock spam on top
+  return false;
+}
+function normalizeFirehoseText(content) {
+  return String(content || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function ensureLaneFirehose(m) {
+  if (!m.clouds) m.clouds = [];
+  if (!m.recentClouds) m.recentClouds = new Map();
+  if (!m.feed) m.feed = [];
+  if (m.feedTimer == null) m.feedTimer = 0.2;
+  if (m.scroll == null) m.scroll = 0;
+}
+function clearLaneFirehose(m) {
+  m.clouds = [];
+  m.recentClouds = new Map();
+  m.feed = [];
+  m.scroll = 0;
+  m.feedTimer = 0.35;
+}
+
+/** Shared ingest: always fill plain feed; also fill Pit clouds (for bubble mode). */
+function ingestHallMessage(m, user, text, live) {
+  if (!m || !text) return;
+  ensureLaneFirehose(m);
+  const plain = String(text).slice(0, 48);
+  m.feed.push({ user: user || '?', text: plain, live: !!live });
+  if (m.feed.length > FIREHOSE_MAX_FEED) m.feed.splice(0, m.feed.length - FIREHOSE_MAX_FEED);
+  m.scroll = (m.scroll || 0) + 1;
+  ingestHallCloud(m, user, plain, live);
+}
+
+/** The Pit paradigm: identical messages MERGE into a growing cloud (×N). */
+function ingestHallCloud(m, user, text, live) {
+  if (!m || !text) return;
+  ensureLaneFirehose(m);
+  const key = normalizeFirehoseText(text);
+  if (!key) return;
+  const now = performance.now();
+  const hit = m.recentClouds.get(key);
+  if (hit && now < hit.expires && m.clouds.includes(hit)) {
+    hit.count += 1;
+    hit.expires = now + FIREHOSE_MERGE_MS;
+    hit.user = user || hit.user;
+    hit.speed = Math.max(hit.speed * 0.82, 14);
+    hit.scale = Math.min(1 + Math.log2(hit.count) * 0.28, 2.4);
+    hit.live = !!(live || hit.live);
+    return;
+  }
+  const cloud = {
+    key, user: user || '?', text: String(text).slice(0, 42),
+    count: 1, live: !!live,
+    x: (Math.random() - 0.5) * 0.55,
+    y: -20,
+    speed: 38 + Math.random() * 28,
+    drift: (Math.random() - 0.5) * 18,
+    scale: 1,
+    expires: now + FIREHOSE_MERGE_MS,
+  };
+  m.clouds.push(cloud);
+  m.recentClouds.set(key, cloud);
+  while (m.clouds.length > FIREHOSE_MAX_CLOUDS) {
+    const old = m.clouds.shift();
+    if (m.recentClouds.get(old.key) === old) m.recentClouds.delete(old.key);
+  }
+}
+function updateHallClouds(m, dt, stageH) {
+  ensureLaneFirehose(m);
+  const now = performance.now();
+  for (let i = m.clouds.length - 1; i >= 0; i--) {
+    const c = m.clouds[i];
+    c.y += c.speed * dt;
+    c.wave = (c.wave || 0) + dt;
+    if (c.y > stageH + 40) {
+      m.clouds.splice(i, 1);
+      if (m.recentClouds.get(c.key) === c) m.recentClouds.delete(c.key);
+    } else if (now > c.expires + 12000 && c.count < 2) {
+      c.speed += 20 * dt;
+    }
+  }
+}
 
 const HallLive = {
   gen: 0,
   status: 'off', // off | connecting | live | err
-  note: 'mock feed',
-  bySlug: null, // Map slug -> monument
+  note: 'plain chat',
+  bySlug: null,
+  msgCount: 0,
+  liveSince: 0,
   kickSlug(channel) {
     if (window.KickFirehose && KickFirehose.kickSlug) return KickFirehose.kickSlug(channel);
     return String(channel || '').toLowerCase().trim().replace(/[^a-z0-9_-]/g, '');
@@ -3610,45 +3710,45 @@ const HallLive = {
   stop() {
     this.gen += 1;
     this.status = 'off';
-    this.note = 'mock feed';
+    this.note = 'plain chat';
     this.bySlug = null;
+    this.msgCount = 0;
+    this.liveSince = 0;
     if (window.KickFirehose) KickFirehose.disconnect();
   },
   async start(hall) {
     const gen = ++this.gen;
     if (!hall || !window.KickFirehose) {
       this.status = 'err';
-      this.note = 'live client missing';
+      this.note = 'live client missing — check firehose/live-client.js';
+      if (hall) rebuildHallFeeds(hall, { clouds: true });
       syncHallHud();
       return;
     }
     const slugs = hall.monuments.map((m) => this.kickSlug(m.channel)).filter(Boolean);
     this.bySlug = new Map();
+    this.msgCount = 0;
+    this.liveSince = 0;
     for (const m of hall.monuments) {
       const s = this.kickSlug(m.channel);
       if (s) this.bySlug.set(s, m);
-      m.feed = [];
-      m.scroll = 0;
+      clearLaneFirehose(m);
       m.live = true;
     }
     this.status = 'connecting';
     this.note = 'resolving Kick chatrooms…';
     syncHallHud();
 
-    // API is same-origin when using serve.py (localhost:8080/api/…)
-    // From /overworld/ the path /api/chatroom still hits the host origin root.
     const result = await KickFirehose.connect(slugs, {
       apiBase: '',
       onStatus: (mode, text) => {
         if (gen !== this.gen) return;
         this.status = mode === 'live' ? 'live' : mode === 'connecting' ? 'connecting' : 'err';
         this.note = text || mode;
-        if (mode === 'err' && store.hall && store.scene === 'hall' && firehoseLivePref()) {
-          // keep toggle on but fall back to mock so the room isn't empty
-          for (const m of store.hall.monuments) {
-            if (!m.feed || !m.feed.length) m.feed = seedHallFeed(m.channel, store.hall.category, 12);
-            m.live = false;
-          }
+        if (mode === 'live') this.liveSince = performance.now();
+        if (mode === 'err') {
+          for (const m of (store.hall && store.hall.monuments) || []) m.live = false;
+          if (store.hall && firehoseBubblesPref()) rebuildHallFeeds(store.hall, { clouds: true });
         }
         syncHallHud();
       },
@@ -3659,11 +3759,11 @@ const HallLive = {
         if (!m) return;
         const plain = msg.plain || (window.KickFirehose ? KickFirehose.plainContent(msg.content) : String(msg.content || ''));
         if (!plain) return;
-        if (!m.feed) m.feed = [];
-        m.feed.push({ user: msg.user || '?', text: plain.slice(0, 48), live: true });
-        if (m.feed.length > 32) m.feed.splice(0, m.feed.length - 32);
-        m.scroll = (m.scroll || 0) + 1;
+        ingestHallMessage(m, msg.user || '?', plain, true);
+        this.msgCount += 1;
         m.live = true;
+        if (this.msgCount === 1) this.note = (this.note || 'live').split(' · waiting')[0];
+        if (this.msgCount === 1 || this.msgCount % 20 === 0) syncHallHud();
       },
     });
 
@@ -3672,11 +3772,14 @@ const HallLive = {
       this.status = 'err';
       this.note = (result && result.cancelled) ? 'cancelled' : 'couldn’t resolve Kick chatrooms';
       if (store.hall) {
-        for (const m of store.hall.monuments) {
-          m.feed = seedHallFeed(m.channel, store.hall.category, 14);
-          m.live = false;
-        }
+        for (const m of store.hall.monuments) m.live = false;
+        rebuildHallFeeds(store.hall, { clouds: true });
       }
+      syncHallHud();
+    } else {
+      this.liveSince = this.liveSince || performance.now();
+      this.note = (result.rooms.length > 1 ? 'live · ' + result.rooms.length + ' channels' : 'live · ' + result.rooms[0].slug)
+        + ' · waiting for chat…';
       syncHallHud();
     }
   },
@@ -3688,7 +3791,7 @@ function setFirehoseLivePref(on) {
     if (on) HallLive.start(store.hall);
     else {
       HallLive.stop();
-      rebuildHallFeeds(store.hall);
+      rebuildHallFeeds(store.hall, { clouds: false });
     }
   } else if (!on) {
     HallLive.stop();
@@ -3727,11 +3830,28 @@ function seedHallFeed(channel, category, count = 14) {
   return out;
 }
 
-function rebuildHallFeeds(hall) {
+/** Reseed lanes. clouds:true seeds Pit merges; false = plain chat lines only. */
+function rebuildHallFeeds(hall, opts) {
   if (!hall) return;
+  const wantClouds = opts && Object.prototype.hasOwnProperty.call(opts, 'clouds')
+    ? !!opts.clouds
+    : firehoseBubblesPref();
   for (const m of hall.monuments) {
-    m.feed = seedHallFeed(m.channel, hall.category, 16);
-    m.feedTimer = 0.35 + (hashString(m.channel) % 80) / 100;
+    clearLaneFirehose(m);
+    const base = hashString(m.channel + '|' + (hall.category || 'mood'));
+    if (wantClouds) {
+      for (let i = 0; i < 10; i++) {
+        const row = mockFirehoseLine(m.channel, hall.category, base + i * 17);
+        ingestHallMessage(m, row.user, row.text, false);
+        if (i % 3 === 0) ingestHallMessage(m, row.user, row.text, false);
+      }
+      ensureLaneFirehose(m);
+      m.clouds.forEach((c, i) => { c.y = 40 + i * 36 + (hashString(c.key + i) % 24); });
+    } else {
+      m.feed = seedHallFeed(m.channel, hall.category, 16);
+      m.scroll = 0;
+    }
+    m.feedTimer = 0.25 + (hashString(m.channel) % 80) / 120;
   }
 }
 
@@ -3745,37 +3865,74 @@ function syncHallHud() {
   if (ui.hallTitleText) ui.hallTitleText.textContent = hall.label || 'Top 5';
   if (ui.hallSubText) ui.hallSubText.textContent = 'TOP 5 · ' + (hall.memberTotal || 0) + ' members · ' + cat + ' firehose';
   ui.hallCatRow.querySelectorAll('.hall-cat').forEach(btn => btn.classList.toggle('active', btn.dataset.cat === cat));
-  const live = firehoseLivePref();
-  ui.hallLiveToggle.checked = live;
-  if (!live) ui.hallLiveNote.textContent = 'mock feed';
-  else if (HallLive.status === 'live') ui.hallLiveNote.textContent = HallLive.note || 'live Kick chat';
-  else if (HallLive.status === 'connecting') ui.hallLiveNote.textContent = HallLive.note || 'connecting…';
-  else if (HallLive.status === 'err') ui.hallLiveNote.textContent = HallLive.note || 'live failed · mock';
-  else ui.hallLiveNote.textContent = 'live preferred';
+  const bubbles = firehoseBubblesPref();
+  ui.hallLiveToggle.checked = bubbles;
+  if (!bubbles) {
+    ui.hallLiveNote.textContent = 'plain chat';
+  } else if (!window.KickFirehose) {
+    ui.hallLiveNote.textContent = 'clouds · client missing';
+  } else if (HallLive.status === 'live') {
+    const base = (HallLive.note || 'live').split(' · waiting')[0];
+    if (HallLive.msgCount) ui.hallLiveNote.textContent = 'clouds · ' + base + ' · ' + HallLive.msgCount + ' msgs';
+    else if (firehoseShouldMock()) ui.hallLiveNote.textContent = 'clouds · ' + base + ' · quiet · mock';
+    else ui.hallLiveNote.textContent = 'clouds · ' + (HallLive.note || 'waiting for chat…');
+  } else if (HallLive.status === 'connecting') {
+    ui.hallLiveNote.textContent = 'clouds · ' + (HallLive.note || 'connecting…');
+  } else if (HallLive.status === 'err') {
+    ui.hallLiveNote.textContent = 'clouds · mock (' + (HallLive.note || 'live failed') + ')';
+  } else {
+    ui.hallLiveNote.textContent = 'clouds';
+  }
 }
 
 function setHallCategory(cat) {
   if (!store.hall || !FIREHOSE_CATS.includes(cat)) return;
   store.hall.category = cat;
-  // Live feeds stay attached to real Kick chat; category only reseeds mock mode
-  if (!(firehoseLivePref() && HallLive.status === 'live')) rebuildHallFeeds(store.hall);
+  // Category reshapes mock; leave live-fed lanes alone while traffic is flowing
+  if (!(firehoseBubblesPref() && HallLive.status === 'live' && HallLive.msgCount > 0)) {
+    rebuildHallFeeds(store.hall, { clouds: firehoseBubblesPref() });
+  }
   syncHallHud();
 }
 
 function updateHallFirehose(dt) {
   const hall = store.hall;
   if (!hall || store.scene !== 'hall') return;
-  // When truly live, KickFirehose pushes messages — don't invent mock spam on top
-  if (firehoseLivePref() && HallLive.status === 'live') return;
+  const stageH = hallSize().h * 0.78;
+  const bubbles = firehoseBubblesPref();
+  const mock = firehoseShouldMock();
+
+  // Quiet-live → mock handoff: refresh HUD once when mock kicks in
+  if (bubbles && HallLive.status === 'live' && HallLive.msgCount === 0 && mock) {
+    if (!HallLive._quietMockNoted) {
+      HallLive._quietMockNoted = true;
+      syncHallHud();
+    }
+  } else {
+    HallLive._quietMockNoted = false;
+  }
+
   for (const m of hall.monuments) {
+    if (bubbles) updateHallClouds(m, dt, stageH);
+    if (!mock) continue;
     m.feedTimer = (m.feedTimer || 0) - dt;
     if (m.feedTimer > 0) continue;
-    m.feedTimer = 0.45 + Math.random() * 0.95;
+    const burst = bubbles && Math.random() < 0.1;
+    m.feedTimer = burst ? 0.12 + Math.random() * 0.18 : 0.4 + Math.random() * 0.9;
     const seed = (m._feedSeq = (m._feedSeq || 0) + 1) + hashString(m.channel + hall.category);
-    if (!m.feed) m.feed = [];
-    m.feed.push(mockFirehoseLine(m.channel, hall.category, seed));
-    if (m.feed.length > 28) m.feed.splice(0, m.feed.length - 28);
-    m.scroll = (m.scroll || 0) + 1;
+    const row = mockFirehoseLine(m.channel, hall.category, seed);
+    if (bubbles) {
+      ingestHallMessage(m, row.user, row.text, false);
+      if (burst) {
+        ingestHallMessage(m, row.user, row.text, false);
+        ingestHallMessage(m, FIREHOSE_USERS[(seed >> 3) % FIREHOSE_USERS.length], row.text, false);
+      }
+    } else {
+      ensureLaneFirehose(m);
+      m.feed.push(row);
+      if (m.feed.length > FIREHOSE_MAX_FEED) m.feed.splice(0, m.feed.length - FIREHOSE_MAX_FEED);
+      m.scroll = (m.scroll || 0) + 1;
+    }
   }
 }
 
@@ -3791,6 +3948,8 @@ function enterHall(nodeId) {
     lane: i,
     x: 0,
     y: 0,
+    clouds: [],
+    recentClouds: new Map(),
     feed: [],
     feedTimer: 0.2 + i * 0.12,
     scroll: 0,
@@ -3802,14 +3961,16 @@ function enterHall(nodeId) {
     category: 'mood',
     returnPos: { x: store.player.x, y: store.player.y }
   };
-  rebuildHallFeeds(store.hall);
   layoutHallMonuments(store.hall);
   store.scene = 'hall'; store.roomCooldown = 1;
   const hs = hallSize();
   store.player.x = hs.w / 2; store.player.y = hs.h - 110;
   store.player.vx = store.player.vy = 0; store.clickTarget = null;
-  if (firehoseLivePref()) HallLive.start(store.hall);
-  else HallLive.stop();
+  if (firehoseBubblesPref()) HallLive.start(store.hall);
+  else {
+    HallLive.stop();
+    rebuildHallFeeds(store.hall, { clouds: false });
+  }
   syncHallHud();
   showZone('Top 5', cat.label + ' · ' + cat.memberCount + ' creators call this home', 'Entering Top 5');
 }
@@ -3822,37 +3983,14 @@ function leaveHall() {
   syncHallHud();
   showZone(store.zoneName, 'the world is still your navigation.', 'Back to overworld');
 }
-function drawHallRoom() {
-  const hall = store.hall; if (!hall) return;
-  const av = axisVisual(hall.axis);
-  const { w: hw, h: hh, laneW } = hallSize();
-  layoutHallMonuments(hall);
 
-  const g = ctx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, shade(av.terra, .5)); g.addColorStop(1, shade(av.terra, .95));
-  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-
-  // Identity camera: hall world == viewport pixels (full width, no letterbox)
-  ctx.save();
-  ctx.translate(W / 2 - store.camera.x * store.camera.zoom, H / 2 - store.camera.y * store.camera.zoom);
-  ctx.scale(store.camera.zoom, store.camera.zoom);
-
-  // Full-bleed lane columns — exactly 20% each, canvas edge to edge
-  for (let i = 0; i < HALL_LANES; i++) {
-    const x0 = i * laneW;
-    ctx.fillStyle = withAlpha(i % 2 ? '#0b120e' : '#121c16', .72);
-    ctx.fillRect(x0, 0, laneW + 1, hh);
-    if (i > 0) line(x0, 0, x0, hh, 3, withAlpha(av.accent, .35));
-  }
-
-  // Firehose text feeds (behind monuments) — use nearly the whole lane width
+function drawHallPlainFeed(hall, hh, laneW) {
   const feedTop = Math.round(hh * 0.14);
   const feedBot = Math.round(hh * 0.90);
   for (let i = 0; i < HALL_LANES; i++) {
     const m = hall.monuments[i];
     const x0 = i * laneW;
     const pad = Math.max(12, Math.min(22, laneW * 0.05));
-    // lane header strip
     ctx.fillStyle = withAlpha('#000000', .28);
     ctx.fillRect(x0, feedTop - 28, laneW, 26);
     if (m) text((m.channel || '').slice(0, 16).toUpperCase(), x0 + laneW / 2, feedTop - 11, 11, withAlpha('#FFF4CF', .85));
@@ -3867,6 +4005,7 @@ function drawHallRoom() {
       ctx.restore();
       continue;
     }
+    ensureLaneFirehose(m);
     const feed = m.feed || [];
     const lineH = 18;
     let y = feedTop + 10 + ((m.scroll || 0) % 2);
@@ -3881,10 +4020,108 @@ function drawHallRoom() {
       y += lineH + 5;
     }
     ctx.restore();
+    text('LANE ' + (i + 1), x0 + laneW / 2, hh - 56, 10, withAlpha(axisVisual(hall.axis).accent, .7));
+  }
+}
+
+function drawHallCloudFeed(hall, hh, laneW) {
+  const feedTop = Math.round(hh * 0.12);
+  const stageBottom = Math.round(hh * 0.92);
+  const stageH = stageBottom - feedTop;
+  const av = axisVisual(hall.axis);
+  for (let i = 0; i < HALL_LANES; i++) {
+    const m = hall.monuments[i];
+    const x0 = i * laneW;
+    const pad = Math.max(10, Math.min(18, laneW * 0.04));
+    ctx.fillStyle = withAlpha('#000000', .28);
+    ctx.fillRect(x0, feedTop - 26, laneW, 24);
+    if (m) text((m.channel || '').slice(0, 16).toUpperCase(), x0 + laneW / 2, feedTop - 10, 11, withAlpha('#FFF4CF', .85));
+    else text('—', x0 + laneW / 2, feedTop - 10, 11, withAlpha('#FFF4CF', .35));
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x0 + 2, feedTop, laneW - 4, stageH);
+    ctx.clip();
+
+    if (!m) {
+      text('empty lane', x0 + laneW / 2, hh / 2, 14, withAlpha('#FFF4CF', .25));
+      ctx.restore();
+      continue;
+    }
+    ensureLaneFirehose(m);
+    const clouds = m.clouds || [];
+    if (!clouds.length) {
+      const wait = HallLive.status === 'connecting' ? 'connecting…'
+        : (HallLive.status === 'live' ? 'waiting for chat clouds…' : 'warming up…');
+      text(wait, x0 + laneW / 2, hh * 0.35, 11, withAlpha('#FFF4CF', .4));
+    }
+    for (const c of clouds) {
+      const cx = x0 + laneW / 2 + c.x * (laneW * 0.42) + Math.sin((c.wave || 0) * 2.2 + c.y * 0.02) * (c.drift || 0);
+      const cy = stageBottom - c.y;
+      if (cy < feedTop - 20 || cy > stageBottom + 30) continue;
+      const nearAvatar = Math.abs(cy - m.y) < 50;
+      const alpha = nearAvatar ? 0.35 : Math.max(0.25, Math.min(1, 1 - (c.y / (stageH + 60)) * 0.35));
+      const scale = c.scale || 1;
+      const label = String(c.text || '');
+      const maxChars = Math.max(10, Math.floor((laneW - pad * 2) / (7.2 * Math.min(scale, 1.6))));
+      const shown = label.slice(0, maxChars);
+      ctx.font = `800 ${Math.round(10 * Math.min(scale, 1.5))}px Inter,Archivo,system-ui`;
+      const tw = Math.min(laneW - pad * 2, ctx.measureText(shown).width + 28);
+      const th = 28 + (c.count > 1 ? 2 : 0);
+      const bw = tw * Math.min(scale, 1.35);
+      const bh = th * Math.min(scale, 1.35);
+      roundedRect(cx - bw / 2, cy - bh / 2, bw, bh, 12);
+      ctx.fillStyle = c.count > 1 ? withAlpha('#15241a', 0.92 * alpha) : withAlpha('#18181c', 0.9 * alpha);
+      ctx.fill();
+      ctx.strokeStyle = c.count > 1 ? withAlpha('#53FC18', 0.75 * alpha) : withAlpha('#ffffff', 0.14 * alpha);
+      ctx.lineWidth = c.count > 1 ? 2.5 : 1.5;
+      ctx.stroke();
+      if (c.count > 1) {
+        ctx.save();
+        glow(withAlpha('#53FC18', 0.55 * alpha), 12);
+        ctx.stroke();
+        resetShadow();
+        ctx.restore();
+      }
+      text(c.user, cx - bw / 2 + 10, cy - 2, 8, withAlpha('#53FC18', alpha), 'left', 800);
+      text(shown, cx - bw / 2 + 10, cy + 10, 10, withAlpha('#FFF4CF', alpha), 'left', 700);
+      if (c.count > 1) {
+        const badge = '×' + c.count;
+        roundedRect(cx + bw / 2 - 18, cy - bh / 2 - 10, 28, 16, 8);
+        ctx.fillStyle = '#53FC18';
+        ctx.fill();
+        text(badge, cx + bw / 2 - 4, cy - bh / 2 + 1, 9, '#102010');
+      }
+    }
+    ctx.restore();
     text('LANE ' + (i + 1), x0 + laneW / 2, hh - 56, 10, withAlpha(av.accent, .7));
   }
+}
 
-  // Arch monuments across full width
+function drawHallRoom() {
+  const hall = store.hall; if (!hall) return;
+  const av = axisVisual(hall.axis);
+  const { w: hw, h: hh, laneW } = hallSize();
+  layoutHallMonuments(hall);
+
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, shade(av.terra, .5)); g.addColorStop(1, shade(av.terra, .95));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+  ctx.save();
+  ctx.translate(W / 2 - store.camera.x * store.camera.zoom, H / 2 - store.camera.y * store.camera.zoom);
+  ctx.scale(store.camera.zoom, store.camera.zoom);
+
+  for (let i = 0; i < HALL_LANES; i++) {
+    const x0 = i * laneW;
+    ctx.fillStyle = withAlpha(i % 2 ? '#0b120e' : '#121c16', .72);
+    ctx.fillRect(x0, 0, laneW + 1, hh);
+    if (i > 0) line(x0, 0, x0, hh, 3, withAlpha(av.accent, .35));
+  }
+
+  if (firehoseBubblesPref()) drawHallCloudFeed(hall, hh, laneW);
+  else drawHallPlainFeed(hall, hh, laneW);
+
   for (const m of hall.monuments) {
     const msStyle = MAGNITUDE_STYLE[m.magnitude] || MAGNITUDE_STYLE.UNKNOWN;
     const near = store.nearby && store.nearby.monument === m;
@@ -4786,9 +5023,9 @@ function panelDataAtlas() {
   liveLab.style.cssText = 'display:flex;align-items:center;gap:8px;cursor:pointer;font-size:11px;font-weight:800';
   const liveCb = el('input'); liveCb.type = 'checkbox'; liveCb.checked = firehoseLivePref();
   liveCb.addEventListener('change', () => setFirehoseLivePref(liveCb.checked));
-  liveLab.appendChild(liveCb); liveLab.appendChild(el('span', null, 'Live firehose in Top 5 halls'));
+  liveLab.appendChild(liveCb); liveLab.appendChild(el('span', null, 'Firehose bubbles in Top 5 halls'));
   liveWrap.appendChild(liveLab);
-  liveWrap.appendChild(el('small', null, 'When on, Top 5 lanes stream real Kick chat via firehose/live-client.js (browser → Kick API + Pusher).'));
+  liveWrap.appendChild(el('small', null, 'OFF = plain chat. ON = Pit-style message clouds (+ live Kick via firehose/live-client.js).'));
   ui.panelBody.appendChild(liveWrap);
   if (model) {
     appendHeading('world summary (text)');
@@ -5326,7 +5563,19 @@ window.KICK_CIRCLES_DEBUG = {
     status: DATA_STATE.status, mode: WORLD.mode, scene: store.scene,
     player: { x: Math.round(store.player.x), y: Math.round(store.player.y) },
     zone: store.zoneName, route: store.route ? { target: store.route.targetLabel, hops: store.route.semanticIds.length } : null,
-    importMeta: DATA_STATE.importMeta ? { ...DATA_STATE.importMeta } : null
+    importMeta: DATA_STATE.importMeta ? { ...DATA_STATE.importMeta } : null,
+    hall: store.hall ? {
+      label: store.hall.label, category: store.hall.category, nodeId: store.hall.nodeId,
+      monuments: store.hall.monuments.map((m) => ({
+        channel: m.channel, feed: m.feed ? m.feed.length : 0,
+        clouds: m.clouds ? m.clouds.length : 0, live: !!m.live,
+      })),
+    } : null,
+    firehose: {
+      bubbles: firehoseBubblesPref(),
+      status: HallLive.status, note: HallLive.note, msgCount: HallLive.msgCount,
+      mock: firehoseShouldMock(),
+    },
   }),
   getRuntimeModel: () => DATA_STATE.runtimeModel ? {
     meta: { ...DATA_STATE.runtimeModel.meta },
@@ -5338,7 +5587,8 @@ window.KICK_CIRCLES_DEBUG = {
       graphEdges: DATA_STATE.runtimeModel.graphEdges.length,
       circles: DATA_STATE.runtimeModel.circles.length,
       places: WORLD.places.length, pavilions: WORLD.pavilions.length
-    }
+    },
+    hallNodeIds: DATA_STATE.runtimeModel.categoryExplorer.slice(0, 24).map((c) => c.nodeId),
   } : null,
   getDiagnostics: () => AtlasDiagnostics.issues.map(i => ({ ...i })),
   validateCurrentAtlas: () => {

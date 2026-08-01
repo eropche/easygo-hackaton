@@ -66,17 +66,37 @@ canvas#world{position:fixed;inset:0;width:100%;height:100%;display:block;touch-a
 .restore-offer button.go{background:var(--kick);color:#102010;border:0;box-shadow:inset 0 -3px 0 rgba(0,0,0,.15)}
 
 /* Top 5 hall — firehose category + live setting bar */
-.hall-hud{position:absolute;left:50%;top:max(12px,env(safe-area-inset-top));transform:translateX(-50%) translateY(-8px);opacity:0;pointer-events:none;transition:.25s ease;z-index:5;display:flex;flex-direction:column;align-items:center;gap:7px;width:min(760px,calc(100vw - 28px))}
+.hall-hud{position:absolute;left:50%;top:max(12px,env(safe-area-inset-top));transform:translateX(-50%) translateY(-8px);opacity:0;pointer-events:none;transition:.25s ease;z-index:5;display:flex;flex-direction:column;align-items:center;gap:7px;width:min(920px,calc(100vw - 20px))}
 .hall-hud.open{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
 .hall-title{text-align:center;padding:8px 16px 6px;border-radius:16px;background:rgba(11,16,13,.9);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 12px 30px rgba(0,0,0,.28);max-width:100%}
 .hall-title h1{margin:0;font-size:clamp(18px,3.2vw,28px);letter-spacing:-.04em;line-height:1;color:#FFF4CF;text-shadow:0 2px 16px rgba(0,0,0,.45)}
 .hall-title p{margin:5px 0 0;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:rgba(83,252,24,.9)}
 .hall-hud-row{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;padding:8px 10px;border-radius:16px;background:rgba(11,16,13,.88);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 12px 30px rgba(0,0,0,.28)}
-.hall-cat{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;padding:7px 12px;font-size:10px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.hall-cat{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;padding:6px 10px;font-size:9px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;cursor:pointer}
 .hall-cat.active{background:rgba(83,252,24,.18);border-color:rgba(83,252,24,.55);color:#d8ffc8}
+.hall-cat[data-cat="mix"].active{background:rgba(255,244,207,.14);border-color:rgba(255,244,207,.45);color:#fff4cf}
 .hall-live-lab{display:flex;align-items:center;gap:7px;font-size:10px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.78);cursor:pointer;padding:0 4px}
 .hall-live-lab input{accent-color:var(--kick)}
 .hall-live-note{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,244,207,.72)}
+/* Focused lane — Kick thumb + associated worlds */
+.hall-focus{position:absolute;left:50%;top:max(88px,calc(env(safe-area-inset-top) + 72px));transform:translateX(-50%) translateY(-10px);opacity:0;pointer-events:none;transition:.28s ease;z-index:5;width:min(720px,calc(100vw - 24px));display:flex;flex-direction:column;gap:8px;align-items:stretch}
+.hall-focus.open{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+.hall-focus-bar{display:flex;align-items:center;gap:8px;justify-content:space-between;padding:7px 10px;border-radius:14px;background:rgba(11,16,13,.9);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.hall-focus-bar b{font-size:12px;letter-spacing:-.02em;color:#FFF4CF}
+.hall-focus-bar small{display:block;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:rgba(83,252,24,.85);margin-top:2px}
+.hall-focus-bar .hf-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.hall-focus-bar button,.hall-focus-bar a.hf-btn{border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);color:#fff;border-radius:999px;padding:6px 10px;font-size:9px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;text-decoration:none}
+.hall-focus-bar button.primary,.hall-focus-bar a.hf-btn.primary{background:rgba(83,252,24,.2);border-color:rgba(83,252,24,.55);color:#d8ffc8}
+.hall-stream-thumb{position:relative;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.14);background:#0a0e0c;aspect-ratio:16/9;max-height:min(28vh,240px);box-shadow:0 16px 40px rgba(0,0,0,.4)}
+.hall-stream-thumb iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
+.hall-stream-thumb .hf-fallback{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px;text-align:center;background:radial-gradient(circle at 50% 30%,rgba(83,252,24,.12),transparent 55%),#0d1410}
+.hall-stream-thumb .hf-fallback span{font-size:11px;font-weight:800;color:rgba(255,244,207,.75)}
+.hall-worlds{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:8px 10px;border-radius:14px;background:rgba(11,16,13,.88);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.hall-worlds .hw-label{width:100%;text-align:center;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:8px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,244,207,.55);margin-bottom:2px}
+.hall-worlds button{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;padding:7px 11px;font-size:10px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.hall-worlds button:hover{border-color:rgba(83,252,24,.55);background:rgba(83,252,24,.12)}
+.hall-worlds button i{font-style:normal;opacity:.7;font-size:9px}
+html.embed .hall-focus{top:max(78px,calc(env(safe-area-inset-top) + 64px))}
 /* Host shell already brands the page — hide nested brand so My Circles FAB doesn't cover it */
 html.embed .top-left{display:none}
 html.embed .hall-hud{top:max(10px,env(safe-area-inset-top))}
@@ -278,15 +298,39 @@ html.embed .hall-hud{top:max(10px,env(safe-area-inset-top))}
       <p id="hallSubText">TOP 5 · firehose</p>
     </div>
     <div class="hall-hud-row" id="hallCatRow">
-      <button type="button" class="hall-cat active" data-cat="mood">mood</button>
-      <button type="button" class="hall-cat" data-cat="vibe">vibe</button>
-      <button type="button" class="hall-cat" data-cat="strategy">strategy</button>
-      <button type="button" class="hall-cat" data-cat="chilling">chilling</button>
+      <button type="button" class="hall-cat active" data-cat="mix" title="Each lane keeps its own class">mix</button>
+      <button type="button" class="hall-cat" data-cat="chaotic">chaotic</button>
+      <button type="button" class="hall-cat" data-cat="chill">chill</button>
+      <button type="button" class="hall-cat" data-cat="tactical">tactical</button>
+      <button type="button" class="hall-cat" data-cat="salty">salty</button>
+      <button type="button" class="hall-cat" data-cat="electric">electric</button>
+      <button type="button" class="hall-cat" data-cat="clutch">clutch</button>
+      <button type="button" class="hall-cat" data-cat="lore">lore</button>
+      <button type="button" class="hall-cat" data-cat="scramble">scramble</button>
     </div>
     <div class="hall-hud-row">
       <label class="hall-live-lab"><input type="checkbox" id="hallLiveToggle" /> Firehose bubbles</label>
       <span class="hall-live-note" id="hallLiveNote">plain chat</span>
     </div>
+  </div>
+
+  <div class="hall-focus" id="hallFocusChrome" aria-hidden="true">
+    <div class="hall-focus-bar">
+      <div>
+        <b id="hallFocusName">Streamer</b>
+        <small id="hallFocusMeta">focused lane</small>
+      </div>
+      <div class="hf-actions">
+        <button type="button" id="hallFocusBack">← all lanes</button>
+        <button type="button" class="primary" id="hallFocusProfile">worlds &amp; profile</button>
+        <a class="hf-btn primary" id="hallKickLink" href="#" target="_blank" rel="noopener noreferrer">Kick ↗</a>
+      </div>
+    </div>
+    <div class="hall-stream-thumb" id="hallStreamThumb">
+      <div class="hf-fallback" id="hallStreamFallback"><span>Kick stream</span></div>
+      <iframe id="hallStreamEmbed" title="Kick stream" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+    </div>
+    <div class="hall-worlds" id="hallWorlds"></div>
   </div>
 
   <div class="interact" id="interactPrompt">E · INTERACT</div>
@@ -414,12 +458,36 @@ const MAGNITUDE_STYLE = {
 // pop = creators homed here + child places + circle weight. Sizes are plate radii.
 const SETTLEMENT_TIERS = {
   megacity: { minPop: 18, r: 640, plate: true,  word: 'MEGACITY', glyph: '✦', mapDot: 5.2, labelZoom: 0 },
-  city:     { minPop: 9,  r: 480, plate: true,  word: 'CITY',     glyph: '◆', mapDot: 4.2, labelZoom: 1.2 },
-  enclave:  { minPop: 4,  r: 340, plate: true,  word: 'ENCLAVE',  glyph: '▲', mapDot: 3.2, labelZoom: 2.2 },
-  tribe:    { minPop: 0,  r: 215, plate: false, word: 'TRIBE',    glyph: '⌂', mapDot: 2.3, labelZoom: 3.2 }
+  city:     { minPop: 9,  r: 480, plate: true,  word: 'CITY',     glyph: '◆', mapDot: 4.2, labelZoom: 1.4 },
+  enclave:  { minPop: 4,  r: 340, plate: true,  word: 'ENCLAVE',  glyph: '▲', mapDot: 3.2, labelZoom: 2.4 },
+  tribe:    { minPop: 0,  r: 215, plate: false, word: 'TRIBE',    glyph: '⌂', mapDot: 2.3, labelZoom: 3.5 }
 };
-// LoD reach in world units — beyond these camera distances small things stop rendering.
-const LOD_REACH = { doors: 1250, popups: 1750, portals: 1050, signsL3: 950, decor: 1600 };
+/* LoD — one ladder for world + map.
+   FAR  · continent: regions, megacity banners
+   MID  · settlement: places, islands, city banners, popups
+   NEAR · street: doors, L3 signs, portals, structure detail
+   Screen-pixel budgets keep cull distances coherent across zoom. */
+const LOD = {
+  zoomFar: 0.62,          // below → region names dominate
+  zoomMid: 0.82,          // above → street-level detail
+  zoomMin: 0.48,
+  zoomMax: 1.14,
+  // max on-screen distance (px from camera) before a class disappears
+  px: { doors: 720, popups: 980, portals: 560, signsL3: 520, backRing: 380, popupLabel: 460, pavilionLabel: 820, decor: 900 }
+};
+function lodReach(pxBudget) {
+  const z = Math.max(0.35, store.camera.zoom || 1);
+  return pxBudget / z;
+}
+function lodBand() {
+  const z = store.camera.zoom || 1;
+  if (z < LOD.zoomFar) return 'far';
+  if (z < LOD.zoomMid) return 'mid';
+  return 'near';
+}
+function lodNear(obj, pxBudget) {
+  return dist(obj, store.camera) < lodReach(pxBudget);
+}
 const CONFIDENCE_STYLE = {
   high:   { tone:'#53FC18', dash:null,      word:'high confidence' },
   medium: { tone:'#FFB020', dash:[10,7],    word:'medium confidence' },
@@ -528,7 +596,12 @@ const ui = {
   wayfinderBtn: document.getElementById('wayfinderBtn'), mapTitleText: document.getElementById('mapTitleText'),
   hallHud: document.getElementById('hallHud'), hallCatRow: document.getElementById('hallCatRow'),
   hallLiveToggle: document.getElementById('hallLiveToggle'), hallLiveNote: document.getElementById('hallLiveNote'),
-  hallTitleText: document.getElementById('hallTitleText'), hallSubText: document.getElementById('hallSubText')
+  hallTitleText: document.getElementById('hallTitleText'), hallSubText: document.getElementById('hallSubText'),
+  hallFocus: document.getElementById('hallFocusChrome'), hallFocusName: document.getElementById('hallFocusName'),
+  hallFocusMeta: document.getElementById('hallFocusMeta'), hallFocusBack: document.getElementById('hallFocusBack'),
+  hallFocusProfile: document.getElementById('hallFocusProfile'), hallKickLink: document.getElementById('hallKickLink'),
+  hallStreamEmbed: document.getElementById('hallStreamEmbed'), hallStreamFallback: document.getElementById('hallStreamFallback'),
+  hallWorlds: document.getElementById('hallWorlds')
 };
 if (new URLSearchParams(location.search).has('embed')) document.documentElement.classList.add('embed');
 
@@ -1084,7 +1157,7 @@ const AtlasNormalizer = {
       const districtByMag = { 'BIG': 'district.top.big_skyline', 'MEDIUM': 'district.top.medium_guildway', 'SMALL/NICHE': 'district.top.niche_lantern_wilds' };
       const creator = {
         id: 'streamer.' + slug, channel, slug,
-        kickUrl: safeUrl(raw.kick_url) || safeUrl(obs.kick_url),
+        kickUrl: safeUrl(raw.kick_url) || safeUrl(obs.kick_url) || safeUrl('https://kick.com/' + slug),
         rank: Number.isFinite(raw.global_rank_30d_hours_watched) ? raw.global_rank_30d_hours_watched : listIndex,
         language: safeLabel(raw.language, 'Unknown', 40),
         watchMagnitude: magnitude,
@@ -2075,7 +2148,7 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const store = {
   elapsed: 0, last: performance.now(), scene: 'world', activeRoom: null, roomCooldown: 0,
-  camera: { x: 510, y: 710, zoom: .82 }, keys: new Set(), clickTarget: null, pendingInteract: null, hovered: null, nearby: null,
+  camera: { x: 510, y: 710, zoom: .72 }, keys: new Set(), clickTarget: null, pendingInteract: null, hovered: null, nearby: null,
   player: { id: 'spooky', name: 'SpookyBunny', x: 510, y: 710, vx: 0, vy: 0, facing: 0, speed: 290, phase: 0, walk: 0, palette: ['#F5C8F2', '#8871A9'], cosmetic: null, role: null },
   journey: { step: 0, watched: false, discovered: false, joined: false, pulseFired: false, voted: false, mission: false, caseOpened: false, recap: false, prediction: false, complete: false, inviteDeclined: false },
   bond: 68, xp: 18, rank: 'Neighbor', notifications: [], toastTimer: 0, pulseAt: null, leaderShuffleAt: 8, caseGlow: 0,
@@ -3038,7 +3111,8 @@ function drawSignPlate(x, y, label, c) {
 function drawGeneratedPlace(p) {
   const s = birthScale(p); if (s <= 0.01) return;
   ctx.save(); ctx.translate(p.x, p.y); ctx.scale(s, s); ctx.translate(-p.x, -p.y);
-  const detail = store.camera.zoom > .62;
+  const band = lodBand();
+  const detail = band !== 'far';
   shadow(.16, 14, 9); blob(p.x, p.y + 14, p.r, 'rgba(16,30,24,.25)', p.seed, 11, .62); resetShadow();
   blob(p.x, p.y + 10, p.r * .97, p.rim, p.seed, 11, .62);
   blob(p.x, p.y, p.r * .9, p.terra, p.seed + 1, 10, .62);
@@ -3049,9 +3123,8 @@ function drawGeneratedPlace(p) {
     ctx.lineWidth = 5; ctx.setLineDash([12, 10]);
     ctx.beginPath(); ctx.ellipse(p.x, p.y, p.r * 1.06, p.r * .68, 0, 0, TAU); ctx.stroke(); ctx.setLineDash([]); ctx.restore();
   }
-  // LoD: child places only carry their own signs when the camera is nearby —
-  // from afar the settlement banner speaks for the whole group
-  if (p.level < 3 || dist(p, store.camera) < LOD_REACH.signsL3) {
+  // L2 signs from MID up; L3 children only NEAR (settlement banner covers FAR)
+  if (p.level < 3 ? band !== 'far' : lodNear(p, LOD.px.signsL3)) {
     drawSignPlate(p.x, p.y + p.r * .62 + 18, p.label, shade(p.accent, .3));
   }
   ctx.restore();
@@ -3143,7 +3216,7 @@ function drawLanguageFerryToken(x, y, language, s = 1) {
 
 function drawCreatorPavilion(pav) {
   const s = birthScale(pav); if (s <= 0.01) return;
-  const near = store.camera.zoom > .58 && dist(pav, store.camera) < 1400;
+  const near = lodBand() !== 'far' && lodNear(pav, LOD.px.pavilionLabel);
   const seedRng = mulberry32(pav.seed);
   const tilt = ((pav.seed % 9) - 4) * .008;
   ctx.save(); ctx.translate(pav.x, pav.y); ctx.scale(s, s); ctx.rotate(tilt);
@@ -3202,7 +3275,7 @@ function drawCreatorPavilion(pav) {
 }
 
 function drawPortalEcho(e) {
-  if (store.camera.zoom < .55) return;
+  if (lodBand() === 'far') return;
   const c = CONFIDENCE_STYLE[e.confidence] || CONFIDENCE_STYLE.unrated;
   ctx.save(); ctx.globalAlpha = .68 + .12 * Math.sin(store.elapsed * 2 + e.seed);
   ctx.translate(e.x, e.y);
@@ -3239,7 +3312,7 @@ function drawCircleGen(c) {
     line(c.x - 30, c.y - 40, c.x - 30, c.y + 14, 5, shade(c.accent, .35));
     line(c.x - 30, c.y - 40, c.x + 18, c.y - 40, 5, shade(c.accent, .35));
     for (let i = 0; i < 3; i++) ellipse(c.x - 20 + i * 20, c.y - 52 + Math.sin(store.elapsed * 1.8 + i) * 4, 6, 8, ['#FF6B6B', '#FFD166', '#4ECDC4'][i]); // balloons
-    if (dist(c, store.camera) < 900) drawSignPlate(c.x, c.y + 44, ref.lifespan.toUpperCase() + ' · ' + ref.style, '#70445F'); // LoD: label only up close
+    if (lodNear(c, LOD.px.popupLabel)) drawSignPlate(c.x, c.y + 44, ref.lifespan.toUpperCase() + ' · ' + ref.style, '#70445F');
   } else { // door
     ellipse(c.x, c.y + 10, 18, 7, 'rgba(0,0,0,.16)');
     roundedRect(c.x - 13, c.y - 26, 26, 38, 8); ctx.fillStyle = shade(c.accent, .4); ctx.fill();
@@ -3314,9 +3387,10 @@ function drawRegionTerrain(r) {
   } else if (r.axis === 'temporal') {
     for (let i = 0; i < 5; i++) ellipse(r.x - r.r * .5 + i * r.r * .25, r.y - r.r * .25 + (i % 2) * 26, 46, 17, 'rgba(226,226,248,.28)');
   }
-  if (store.camera.zoom < .62) {
-    ctx.save(); ctx.globalAlpha = .85;
-    text(r.label.toUpperCase(), r.x, r.y - r.r * .28, Math.max(26, r.r * .12), withAlpha('#FFF4CF', .8));
+  // FAR band: region names read as continent labels; they fade once you walk into MID
+  if (lodBand() === 'far') {
+    ctx.save(); ctx.globalAlpha = .9;
+    text(r.label.toUpperCase(), r.x, r.y - r.r * .28, Math.max(26, r.r * .12), withAlpha('#FFF4CF', .85));
     text(r.glyph, r.x, r.y - r.r * .28 - Math.max(30, r.r * .14), Math.max(22, r.r * .1), r.accent);
     ctx.restore();
   }
@@ -3447,18 +3521,21 @@ function drawWorld() {
   }
   if (WORLD.mode === 'atlas') {
     for (const p of WORLD.places) if (inView(p.x, p.y, p.r + 160)) { drawGeneratedPlace(p); visiblePlaces++; }
-    for (const c of WORLD.circles) { // LoD: small doors fade out beyond walking reach
+    for (const c of WORLD.circles) { // LoD: islands always → popups MID → doors NEAR
       if (!inView(c.x, c.y, c.r + 120)) continue;
-      const camD = dist(c, store.camera);
-      if (c.tier === 'door' && camD > LOD_REACH.doors) continue;
-      if (c.tier === 'popup' && camD > LOD_REACH.popups) continue;
-      if (c.ring > 0 && camD > 650) continue; // back streets resolve only inside the settlement
+      if (c.tier === 'door' && !lodNear(c, LOD.px.doors)) continue;
+      if (c.tier === 'popup' && !lodNear(c, LOD.px.popups)) continue;
+      if (c.ring > 0 && !lodNear(c, LOD.px.backRing)) continue;
       drawCircleGen(c);
     }
     for (const g of WORLD.gates) if (inView(g.x, g.y, 220)) drawRegionGate(g);
-    for (const e of WORLD.portals) if (inView(e.x, e.y, 70) && dist(e, store.camera) < LOD_REACH.portals) drawPortalEcho(e);
-    for (const s of WORLD.settlements) { // city and megacity banners anchor the big picture
-      if ((s.tier !== 'megacity' && s.tier !== 'city') || !inView(s.x, s.y, s.r)) continue;
+    for (const e of WORLD.portals) if (inView(e.x, e.y, 70) && lodNear(e, LOD.px.portals)) drawPortalEcho(e);
+    for (const s of WORLD.settlements) {
+      // megacity banners from FAR; cities from MID (tribes use place signs)
+      if (s.tier === 'megacity') { /* always */ }
+      else if (s.tier === 'city' && lodBand() !== 'far') { /* mid+ */ }
+      else continue;
+      if (!inView(s.x, s.y, s.r)) continue;
       const td = SETTLEMENT_TIERS[s.tier];
       ctx.save(); ctx.globalAlpha = .9;
       text(td.glyph + '  ' + s.label.toUpperCase(), s.x, s.y - s.r * .55 - 20, s.tier === 'megacity' ? 15 : 12, withAlpha('#FFF4CF', .85));
@@ -3589,13 +3666,26 @@ function drawRoomObject(o, type) {
    Toggle ON  → Pit-style rising/merging message clouds + live Kick
    ================================================================ */
 const HALL_LANES = 5;
-const FIREHOSE_CATS = ['mood', 'vibe', 'strategy', 'chilling'];
+/* Heavy chat classes — readable at a glance; mix = each lane keeps its own.
+   Core: chaotic / chill / tactical. Five more: salty, electric, clutch, lore, scramble. */
+const FIREHOSE_CLASSES = ['chaotic', 'chill', 'tactical', 'salty', 'electric', 'clutch', 'lore', 'scramble'];
+const FIREHOSE_CATS = ['mix', ...FIREHOSE_CLASSES];
 const FIREHOSE_POOLS = {
-  mood: ['KEKW', 'I\'m crying', 'this hits different', 'chat is unhinged', 'W stream', 'no shot', 'L + ratio', 'actually insane', 'my sides', 'pause chat', '?????', 'COOKED', 'he\'s so back', 'emotional damage'],
-  vibe: ['comfy stream', 'late night energy', 'vibes immaculate', 'rain + chat', 'cozy hours', 'this playlist goes', 'soft chaos', 'main character energy', 'lofi in the soul', 'hanging with the squad', 'glowing rn', 'peak vibes'],
-  strategy: ['push mid', 'rotate B', 'save util', 'bait the peek', 'don\'t overextend', 'trade frag', 'hold angle', 'eco round', 'stack A', 'default then hit', 'watch flank', 'call the timing'],
-  chilling: ['hey chat', 'just vibing', 'brb snack', 'first time here', 'love this circle', 'good morning', 'who\'s new', 'sending hugs', 'slow mode gang', 'lurking politely', 'thanks for the company', 'nice and easy']
+  chaotic:  ['KEKW', 'chat is unhinged', 'I\'m crying', 'no shot', 'pause chat', 'COOKED', 'L + ratio', 'actually insane', 'my sides', 'he\'s so back', 'emotional damage', 'BRO WHAT', '?????', 'this chat is feral'],
+  chill:    ['hey chat', 'just vibing', 'comfy stream', 'brb snack', 'slow mode gang', 'lurking politely', 'love this circle', 'nice and easy', 'good morning', 'rain + chat', 'sending hugs', 'soft hours'],
+  tactical: ['push mid', 'rotate B', 'save util', 'bait the peek', 'don\'t overextend', 'trade frag', 'hold angle', 'eco round', 'stack A', 'watch flank', 'default then hit', 'call the timing'],
+  salty:    ['what is he doing', 'unlucky', 'L', 'nah that\'s bad', 'throw', 'diff', 'how do you miss that', 'chat is toxic', 'I\'m done', 'uninstall', 'bro is trolling', 'hard stuck'],
+  electric: ['LETS GOOO', 'W stream', 'GOATED', 'chat is cooking', 'SHEEEESH', 'insane', 'no way', 'POP OFF', 'main character energy', 'peak', 'this hits different', 'HYPE TRAIN'],
+  clutch:   ['1v3 trust', 'don\'t peek', 'ACE INCOMING', 'last round', 'lock in', 'he\'s cooked if he swings', 'OT time', 'all on this', 'nerves of steel', 'breathe', 'one more', 'WIN CONDITION'],
+  lore:     ['remember the arc?', 'season 1 vibes', 'he said it again', 'clip that', 'canon event', 'this is lore', 'day one gang', 'inside joke hits', 'story arc loading', 'parasocial hours', 'we were there', 'history repeating'],
+  scramble: ['wait what', 'huh?', 'what camera', 'I don\'t get it', 'can someone explain', 'lost the plot', '???', 'wrong vod?', 'who is talking', 'context please', 'am I late', 'rewinding']
 };
+function laneChatClass(hall, m) {
+  if (hall && hall.category && hall.category !== 'mix' && FIREHOSE_POOLS[hall.category]) return hall.category;
+  if (m && m.chatClass && FIREHOSE_POOLS[m.chatClass]) return m.chatClass;
+  const i = (m && m.lane != null) ? m.lane : 0;
+  return FIREHOSE_CLASSES[i % FIREHOSE_CLASSES.length];
+}
 const FIREHOSE_USERS = ['pogfan', 'nightowl', 'clipgod', 'lurker', 'mod_sara', 'ember', 'train', 'pixel', 'koi', 'vex', 'moss', 'nova'];
 const FIREHOSE_MERGE_MS = 8000;
 const FIREHOSE_MAX_CLOUDS = 22;
@@ -3805,28 +3895,190 @@ function hallSize() {
 }
 function layoutHallMonuments(hall) {
   if (!hall || !hall.monuments) return;
-  const { h, laneW } = hallSize();
+  const { w, h, laneW } = hallSize();
   const n = hall.monuments.length;
+  const focus = hall.focusLane;
   hall.monuments.forEach((m, i) => {
-    const t = n <= 1 ? 0.5 : i / (n - 1);
     m.lane = i;
-    m.x = laneW * (i + 0.5);
-    m.y = h * 0.50 - Math.sin(Math.PI * t) * (h * 0.11);
+    if (focus != null && focus === i) {
+      m.x = w / 2;
+      m.y = h * 0.62;
+      m.focused = true;
+    } else if (focus != null) {
+      m.x = -4000;
+      m.y = h * 0.5;
+      m.focused = false;
+    } else {
+      const t = n <= 1 ? 0.5 : i / (n - 1);
+      m.x = laneW * (i + 0.5);
+      m.y = h * 0.50 - Math.sin(Math.PI * t) * (h * 0.11);
+      m.focused = false;
+    }
   });
 }
 
-function mockFirehoseLine(channel, category, seed) {
-  const pool = FIREHOSE_POOLS[category] || FIREHOSE_POOLS.mood;
-  const h = hashString(String(channel) + '|' + category + '|' + seed);
-  const user = FIREHOSE_USERS[h % FIREHOSE_USERS.length] + ((h >> 4) % 90 + 1);
-  const text = pool[h % pool.length];
-  return { user, text, seed };
+function kickPlayerUrl(slug) {
+  const s = HallLive.kickSlug(slug);
+  if (!s) return '';
+  const parent = encodeURIComponent(location.hostname || 'localhost');
+  return 'https://player.kick.com/' + encodeURIComponent(s) + '?muted=true&autoplay=true&parent=' + parent;
+}
+function kickChannelUrl(channel, kickUrl) {
+  const safe = safeUrl(kickUrl);
+  if (safe) return safe;
+  const s = HallLive.kickSlug(channel);
+  return s ? 'https://kick.com/' + encodeURIComponent(s) : '';
 }
 
-function seedHallFeed(channel, category, count = 14) {
+/** Places / worlds this creator is associated with (home, memberships, portals, pavilion). */
+function creatorAssociatedWorlds(channel) {
+  const model = DATA_STATE.runtimeModel;
+  if (!model || !channel) return [];
+  const c = model.indexes.streamerByChannel.get(String(channel).toLowerCase());
+  if (!c) return [];
   const out = [];
-  const base = hashString(channel + '|' + category) % 1000;
-  for (let i = 0; i < count; i++) out.push(mockFirehoseLine(channel, category, base + i * 17));
+  const seen = new Set();
+  const pushPlace = (id, role) => {
+    if (!id || seen.has(id)) return;
+    const place = WORLD.places.find(p => p.id === id)
+      || (model.indexes.placesById && model.indexes.placesById.get(id));
+    const node = model.indexes.taxonomyById.get(id);
+    if (!place && !node) return;
+    seen.add(id);
+    out.push({
+      id,
+      label: (place && place.label) || (node && node.label) || id,
+      role,
+      glyph: axisVisual((place && place.axis) || (node && node.axis) || '').glyph,
+      accent: axisVisual((place && place.axis) || (node && node.axis) || '').accent,
+      hasGeo: !!(place || WORLD.pavilions.find(p => p.id === id))
+    });
+  };
+  if (c.placement && c.placement.primaryHomeNodeId) pushPlace(c.placement.primaryHomeNodeId, 'home');
+  for (const nid of (c.memberships && c.memberships.all) || []) pushPlace(nid, 'world');
+  for (const nid of (c.placement && c.placement.portalNodeIds) || []) pushPlace(nid, 'portal');
+  const pav = WORLD.pavilions.find(p => p.creatorId === c.id);
+  if (pav && !seen.has(pav.id)) {
+    seen.add(pav.id);
+    out.unshift({
+      id: pav.id, label: c.channel + ' Pavilion', role: 'pavilion',
+      glyph: '◆', accent: '#53FC18', hasGeo: true
+    });
+  }
+  return out.slice(0, 10);
+}
+
+function clearHallFocus() {
+  if (!store.hall) return;
+  store.hall.focusLane = null;
+  if (ui.hallStreamEmbed) {
+    ui.hallStreamEmbed.removeAttribute('src');
+    ui.hallStreamEmbed.style.display = 'none';
+  }
+  if (ui.hallStreamFallback) ui.hallStreamFallback.style.display = 'flex';
+  if (ui.hallFocus) {
+    ui.hallFocus.classList.remove('open');
+    ui.hallFocus.setAttribute('aria-hidden', 'true');
+  }
+  if (ui.hallWorlds) ui.hallWorlds.innerHTML = '';
+  layoutHallMonuments(store.hall);
+  syncHallHud();
+}
+
+function focusHallLane(laneIndex) {
+  if (!store.hall || store.scene !== 'hall') return;
+  const m = store.hall.monuments[laneIndex];
+  if (!m) return;
+  if (store.hall.focusLane === laneIndex) {
+    openPanel('creator', m.channel);
+    return;
+  }
+  store.hall.focusLane = laneIndex;
+  const hs = hallSize();
+  store.player.x = hs.w / 2;
+  store.player.y = hs.h * 0.78;
+  store.player.vx = store.player.vy = 0;
+  store.clickTarget = null;
+  layoutHallMonuments(store.hall);
+  syncHallFocusChrome();
+  syncHallHud();
+  showZone(m.channel, 'firehose focused · worlds below · Esc for all lanes', 'Lane focus');
+}
+
+function syncHallFocusChrome() {
+  if (!ui.hallFocus || !store.hall) return;
+  const focus = store.hall.focusLane;
+  const m = focus != null ? store.hall.monuments[focus] : null;
+  const open = !!(m && store.scene === 'hall');
+  ui.hallFocus.classList.toggle('open', open);
+  ui.hallFocus.setAttribute('aria-hidden', open ? 'false' : 'true');
+  if (!open) {
+    if (ui.hallStreamEmbed) {
+      ui.hallStreamEmbed.removeAttribute('src');
+      ui.hallStreamEmbed.style.display = 'none';
+    }
+    return;
+  }
+  const model = DATA_STATE.runtimeModel;
+  const c = model && model.indexes.streamerByChannel.get(String(m.channel).toLowerCase());
+  const slug = (c && c.slug) || HallLive.kickSlug(m.channel);
+  const kickUrl = kickChannelUrl(m.channel, c && c.kickUrl);
+  const player = kickPlayerUrl(slug);
+  const cls = laneChatClass(store.hall, m);
+  if (ui.hallFocusName) ui.hallFocusName.textContent = m.channel;
+  if (ui.hallFocusMeta) {
+    ui.hallFocusMeta.textContent = '#' + m.rank + ' · ' + cls + (m.live ? ' · live chat' : '');
+  }
+  if (ui.hallKickLink) {
+    if (kickUrl) { ui.hallKickLink.href = kickUrl; ui.hallKickLink.style.display = ''; }
+    else { ui.hallKickLink.removeAttribute('href'); ui.hallKickLink.style.display = 'none'; }
+  }
+  if (ui.hallStreamEmbed && ui.hallStreamFallback) {
+    if (player) {
+      if (ui.hallStreamEmbed.getAttribute('src') !== player) ui.hallStreamEmbed.src = player;
+      ui.hallStreamEmbed.style.display = 'block';
+      ui.hallStreamFallback.style.display = 'none';
+    } else {
+      ui.hallStreamEmbed.removeAttribute('src');
+      ui.hallStreamEmbed.style.display = 'none';
+      ui.hallStreamFallback.style.display = 'flex';
+      ui.hallStreamFallback.innerHTML = '<span>no Kick slug for this lane</span>';
+    }
+  }
+  if (ui.hallWorlds) {
+    const worlds = creatorAssociatedWorlds(m.channel);
+    ui.hallWorlds.innerHTML = '';
+    const lab = el('div', 'hw-label', worlds.length ? 'associated worlds · tap to fast travel' : 'no associated worlds in this atlas');
+    ui.hallWorlds.appendChild(lab);
+    for (const w of worlds) {
+      const b = el('button', null, '');
+      b.appendChild(el('i', null, w.glyph || '◎'));
+      b.appendChild(document.createTextNode(w.label));
+      b.title = (w.role || 'world') + (w.hasGeo ? ' · fast travel' : '');
+      b.addEventListener('click', () => {
+        const label = w.label;
+        const pid = w.id;
+        leaveHall();
+        setTimeout(() => travelToPlaceId(pid, label), 40);
+      });
+      ui.hallWorlds.appendChild(b);
+    }
+  }
+}
+
+function mockFirehoseLine(channel, chatClass, seed) {
+  const cls = FIREHOSE_POOLS[chatClass] ? chatClass : 'chaotic';
+  const pool = FIREHOSE_POOLS[cls];
+  const h = hashString(String(channel) + '|' + cls + '|' + seed);
+  const user = FIREHOSE_USERS[h % FIREHOSE_USERS.length] + ((h >> 4) % 90 + 1);
+  const text = pool[h % pool.length];
+  return { user, text, seed, chatClass: cls };
+}
+
+function seedHallFeed(channel, chatClass, count = 14) {
+  const out = [];
+  const base = hashString(channel + '|' + chatClass) % 1000;
+  for (let i = 0; i < count; i++) out.push(mockFirehoseLine(channel, chatClass, base + i * 17));
   return out;
 }
 
@@ -3838,17 +4090,18 @@ function rebuildHallFeeds(hall, opts) {
     : firehoseBubblesPref();
   for (const m of hall.monuments) {
     clearLaneFirehose(m);
-    const base = hashString(m.channel + '|' + (hall.category || 'mood'));
+    const cls = laneChatClass(hall, m);
+    const base = hashString(m.channel + '|' + cls);
     if (wantClouds) {
       for (let i = 0; i < 10; i++) {
-        const row = mockFirehoseLine(m.channel, hall.category, base + i * 17);
+        const row = mockFirehoseLine(m.channel, cls, base + i * 17);
         ingestHallMessage(m, row.user, row.text, false);
         if (i % 3 === 0) ingestHallMessage(m, row.user, row.text, false);
       }
       ensureLaneFirehose(m);
       m.clouds.forEach((c, i) => { c.y = 40 + i * 36 + (hashString(c.key + i) % 24); });
     } else {
-      m.feed = seedHallFeed(m.channel, hall.category, 16);
+      m.feed = seedHallFeed(m.channel, cls, 16);
       m.scroll = 0;
     }
     m.feedTimer = 0.25 + (hashString(m.channel) % 80) / 120;
@@ -3861,9 +4114,15 @@ function syncHallHud() {
   const open = !!(hall && store.scene === 'hall');
   ui.hallHud.classList.toggle('open', open);
   if (!open) return;
-  const cat = hall.category || 'mood';
+  const cat = hall.category || 'mix';
   if (ui.hallTitleText) ui.hallTitleText.textContent = hall.label || 'Top 5';
-  if (ui.hallSubText) ui.hallSubText.textContent = 'TOP 5 · ' + (hall.memberTotal || 0) + ' members · ' + cat + ' firehose';
+  const focusedM = hall.focusLane != null ? hall.monuments[hall.focusLane] : null;
+  const laneHint = focusedM
+    ? 'FOCUS · ' + focusedM.channel + ' · ' + laneChatClass(hall, focusedM)
+    : (cat === 'mix'
+      ? hall.monuments.map((m) => laneChatClass(hall, m)).join(' · ')
+      : cat + ' firehose');
+  if (ui.hallSubText) ui.hallSubText.textContent = 'TOP 5 · ' + (hall.memberTotal || 0) + ' members · ' + laneHint;
   ui.hallCatRow.querySelectorAll('.hall-cat').forEach(btn => btn.classList.toggle('active', btn.dataset.cat === cat));
   const bubbles = firehoseBubblesPref();
   ui.hallLiveToggle.checked = bubbles;
@@ -3919,8 +4178,9 @@ function updateHallFirehose(dt) {
     if (m.feedTimer > 0) continue;
     const burst = bubbles && Math.random() < 0.1;
     m.feedTimer = burst ? 0.12 + Math.random() * 0.18 : 0.4 + Math.random() * 0.9;
-    const seed = (m._feedSeq = (m._feedSeq || 0) + 1) + hashString(m.channel + hall.category);
-    const row = mockFirehoseLine(m.channel, hall.category, seed);
+    const cls = laneChatClass(hall, m);
+    const seed = (m._feedSeq = (m._feedSeq || 0) + 1) + hashString(m.channel + cls);
+    const row = mockFirehoseLine(m.channel, cls, seed);
     if (bubbles) {
       ingestHallMessage(m, row.user, row.text, false);
       if (burst) {
@@ -3946,6 +4206,7 @@ function enterHall(nodeId) {
   const monuments = top.map((t, i) => ({
     ...t,
     lane: i,
+    chatClass: FIREHOSE_CLASSES[i % FIREHOSE_CLASSES.length],
     x: 0,
     y: 0,
     clouds: [],
@@ -3958,7 +4219,8 @@ function enterHall(nodeId) {
   store.hall = {
     nodeId, label: cat.label, axis, monuments,
     memberTotal: cat.memberCount,
-    category: 'mood',
+    category: 'mix',
+    focusLane: null,
     returnPos: { x: store.player.x, y: store.player.y }
   };
   layoutHallMonuments(store.hall);
@@ -3972,79 +4234,90 @@ function enterHall(nodeId) {
     rebuildHallFeeds(store.hall, { clouds: false });
   }
   syncHallHud();
+  syncHallFocusChrome();
   showZone('Top 5', cat.label + ' · ' + cat.memberCount + ' creators call this home', 'Entering Top 5');
 }
 function leaveHall() {
   const back = store.hall && store.hall.returnPos;
+  clearHallFocus();
   HallLive.stop();
   store.scene = 'world'; store.roomCooldown = 1.2;
   if (back) { store.player.x = back.x; store.player.y = back.y + 40; }
   store.hall = null; store.player.vx = store.player.vy = 0;
   syncHallHud();
+  syncHallFocusChrome();
   showZone(store.zoneName, 'the world is still your navigation.', 'Back to overworld');
 }
 
 function drawHallPlainFeed(hall, hh, laneW) {
-  const feedTop = Math.round(hh * 0.14);
+  const focused = hall.focusLane != null;
+  // Leave headroom for Kick thumb when a lane is focused
+  const feedTop = Math.round(hh * (focused ? 0.36 : 0.14));
   const feedBot = Math.round(hh * 0.90);
+  const drawW = focused ? hallSize().w : laneW;
   for (let i = 0; i < HALL_LANES; i++) {
+    if (focused && i !== hall.focusLane) continue;
     const m = hall.monuments[i];
-    const x0 = i * laneW;
-    const pad = Math.max(12, Math.min(22, laneW * 0.05));
+    const x0 = focused ? 0 : i * laneW;
+    const pad = Math.max(12, Math.min(28, drawW * 0.05));
     ctx.fillStyle = withAlpha('#000000', .28);
-    ctx.fillRect(x0, feedTop - 28, laneW, 26);
-    if (m) text((m.channel || '').slice(0, 16).toUpperCase(), x0 + laneW / 2, feedTop - 11, 11, withAlpha('#FFF4CF', .85));
-    else text('—', x0 + laneW / 2, feedTop - 11, 11, withAlpha('#FFF4CF', .35));
+    ctx.fillRect(x0, feedTop - 28, drawW, 26);
+    if (m) text((m.channel || '').slice(0, focused ? 28 : 16).toUpperCase(), x0 + drawW / 2, feedTop - 11, focused ? 14 : 11, withAlpha('#FFF4CF', .85));
+    else text('—', x0 + drawW / 2, feedTop - 11, 11, withAlpha('#FFF4CF', .35));
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(x0 + pad, feedTop, laneW - pad * 2, feedBot - feedTop);
+    ctx.rect(x0 + pad, feedTop, drawW - pad * 2, feedBot - feedTop);
     ctx.clip();
     if (!m) {
-      text('empty lane', x0 + laneW / 2, hh / 2, 14, withAlpha('#FFF4CF', .25));
+      text('empty lane', x0 + drawW / 2, hh / 2, 14, withAlpha('#FFF4CF', .25));
       ctx.restore();
       continue;
     }
     ensureLaneFirehose(m);
     const feed = m.feed || [];
-    const lineH = 18;
+    const lineH = focused ? 22 : 18;
     let y = feedTop + 10 + ((m.scroll || 0) % 2);
     const maxLines = Math.max(10, Math.floor((feedBot - feedTop - 20) / (lineH + 5)));
     const visible = feed.slice(-maxLines);
-    const maxChars = Math.max(18, Math.floor((laneW - pad * 2) / 6.2));
+    const maxChars = Math.max(18, Math.floor((drawW - pad * 2) / (focused ? 7.4 : 6.2)));
     for (const row of visible) {
       const gapAroundAvatar = Math.abs(y - (m.y - 10)) < 58;
-      const alpha = gapAroundAvatar ? .18 : .86;
-      text(row.user, x0 + pad, y, 10, withAlpha('#53FC18', alpha), 'left', 800);
-      text(String(row.text || '').slice(0, maxChars), x0 + pad, y + 12, 12, withAlpha('#FFF4CF', alpha), 'left', 700);
+      const alpha = gapAroundAvatar ? .18 : .9;
+      text(row.user, x0 + pad, y, focused ? 12 : 10, withAlpha('#53FC18', alpha), 'left', 800);
+      text(String(row.text || '').slice(0, maxChars), x0 + pad, y + (focused ? 14 : 12), focused ? 15 : 12, withAlpha('#FFF4CF', alpha), 'left', 700);
       y += lineH + 5;
     }
     ctx.restore();
-    text('LANE ' + (i + 1), x0 + laneW / 2, hh - 56, 10, withAlpha(axisVisual(hall.axis).accent, .7));
+    const cls = laneChatClass(hall, m);
+    text(String(cls).toUpperCase(), x0 + drawW / 2, hh - 56, focused ? 12 : 10, withAlpha(axisVisual(hall.axis).accent, .75));
   }
 }
 
 function drawHallCloudFeed(hall, hh, laneW) {
-  const feedTop = Math.round(hh * 0.12);
+  const focused = hall.focusLane != null;
+  const feedTop = Math.round(hh * (focused ? 0.34 : 0.12));
   const stageBottom = Math.round(hh * 0.92);
   const stageH = stageBottom - feedTop;
   const av = axisVisual(hall.axis);
+  const drawW = focused ? hallSize().w : laneW;
   for (let i = 0; i < HALL_LANES; i++) {
+    if (focused && i !== hall.focusLane) continue;
     const m = hall.monuments[i];
-    const x0 = i * laneW;
-    const pad = Math.max(10, Math.min(18, laneW * 0.04));
+    const x0 = focused ? 0 : i * laneW;
+    const pad = Math.max(10, Math.min(24, drawW * 0.04));
     ctx.fillStyle = withAlpha('#000000', .28);
-    ctx.fillRect(x0, feedTop - 26, laneW, 24);
-    if (m) text((m.channel || '').slice(0, 16).toUpperCase(), x0 + laneW / 2, feedTop - 10, 11, withAlpha('#FFF4CF', .85));
-    else text('—', x0 + laneW / 2, feedTop - 10, 11, withAlpha('#FFF4CF', .35));
+    ctx.fillRect(x0, feedTop - 26, drawW, 24);
+    if (m) text((m.channel || '').slice(0, focused ? 28 : 16).toUpperCase(), x0 + drawW / 2, feedTop - 10, focused ? 14 : 11, withAlpha('#FFF4CF', .85));
+    else text('—', x0 + drawW / 2, feedTop - 10, 11, withAlpha('#FFF4CF', .35));
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(x0 + 2, feedTop, laneW - 4, stageH);
+    ctx.rect(x0 + 2, feedTop, drawW - 4, stageH);
     ctx.clip();
 
     if (!m) {
-      text('empty lane', x0 + laneW / 2, hh / 2, 14, withAlpha('#FFF4CF', .25));
+      text('empty lane', x0 + drawW / 2, hh / 2, 14, withAlpha('#FFF4CF', .25));
       ctx.restore();
       continue;
     }
@@ -4053,21 +4326,21 @@ function drawHallCloudFeed(hall, hh, laneW) {
     if (!clouds.length) {
       const wait = HallLive.status === 'connecting' ? 'connecting…'
         : (HallLive.status === 'live' ? 'waiting for chat clouds…' : 'warming up…');
-      text(wait, x0 + laneW / 2, hh * 0.35, 11, withAlpha('#FFF4CF', .4));
+      text(wait, x0 + drawW / 2, hh * (focused ? 0.48 : 0.35), focused ? 14 : 11, withAlpha('#FFF4CF', .4));
     }
     for (const c of clouds) {
-      const cx = x0 + laneW / 2 + c.x * (laneW * 0.42) + Math.sin((c.wave || 0) * 2.2 + c.y * 0.02) * (c.drift || 0);
+      const cx = x0 + drawW / 2 + c.x * (drawW * (focused ? 0.28 : 0.42)) + Math.sin((c.wave || 0) * 2.2 + c.y * 0.02) * (c.drift || 0);
       const cy = stageBottom - c.y;
       if (cy < feedTop - 20 || cy > stageBottom + 30) continue;
       const nearAvatar = Math.abs(cy - m.y) < 50;
       const alpha = nearAvatar ? 0.35 : Math.max(0.25, Math.min(1, 1 - (c.y / (stageH + 60)) * 0.35));
-      const scale = c.scale || 1;
+      const scale = (c.scale || 1) * (focused ? 1.25 : 1);
       const label = String(c.text || '');
-      const maxChars = Math.max(10, Math.floor((laneW - pad * 2) / (7.2 * Math.min(scale, 1.6))));
+      const maxChars = Math.max(10, Math.floor((drawW - pad * 2) / (7.2 * Math.min(scale, 1.8))));
       const shown = label.slice(0, maxChars);
-      ctx.font = `800 ${Math.round(10 * Math.min(scale, 1.5))}px Inter,Archivo,system-ui`;
-      const tw = Math.min(laneW - pad * 2, ctx.measureText(shown).width + 28);
-      const th = 28 + (c.count > 1 ? 2 : 0);
+      ctx.font = `800 ${Math.round((focused ? 12 : 10) * Math.min(scale, 1.6))}px Inter,Archivo,system-ui`;
+      const tw = Math.min(drawW - pad * 2, ctx.measureText(shown).width + 28);
+      const th = (focused ? 32 : 28) + (c.count > 1 ? 2 : 0);
       const bw = tw * Math.min(scale, 1.35);
       const bh = th * Math.min(scale, 1.35);
       roundedRect(cx - bw / 2, cy - bh / 2, bw, bh, 12);
@@ -4083,8 +4356,8 @@ function drawHallCloudFeed(hall, hh, laneW) {
         resetShadow();
         ctx.restore();
       }
-      text(c.user, cx - bw / 2 + 10, cy - 2, 8, withAlpha('#53FC18', alpha), 'left', 800);
-      text(shown, cx - bw / 2 + 10, cy + 10, 10, withAlpha('#FFF4CF', alpha), 'left', 700);
+      text(c.user, cx - bw / 2 + 10, cy - 2, focused ? 10 : 8, withAlpha('#53FC18', alpha), 'left', 800);
+      text(shown, cx - bw / 2 + 10, cy + 10, focused ? 12 : 10, withAlpha('#FFF4CF', alpha), 'left', 700);
       if (c.count > 1) {
         const badge = '×' + c.count;
         roundedRect(cx + bw / 2 - 18, cy - bh / 2 - 10, 28, 16, 8);
@@ -4094,7 +4367,8 @@ function drawHallCloudFeed(hall, hh, laneW) {
       }
     }
     ctx.restore();
-    text('LANE ' + (i + 1), x0 + laneW / 2, hh - 56, 10, withAlpha(av.accent, .7));
+    const cls = laneChatClass(hall, m);
+    text(String(cls).toUpperCase(), x0 + drawW / 2, hh - 56, focused ? 12 : 10, withAlpha(av.accent, .75));
   }
 }
 
@@ -4112,35 +4386,53 @@ function drawHallRoom() {
   ctx.translate(W / 2 - store.camera.x * store.camera.zoom, H / 2 - store.camera.y * store.camera.zoom);
   ctx.scale(store.camera.zoom, store.camera.zoom);
 
-  for (let i = 0; i < HALL_LANES; i++) {
-    const x0 = i * laneW;
-    ctx.fillStyle = withAlpha(i % 2 ? '#0b120e' : '#121c16', .72);
-    ctx.fillRect(x0, 0, laneW + 1, hh);
-    if (i > 0) line(x0, 0, x0, hh, 3, withAlpha(av.accent, .35));
+  const focused = hall.focusLane != null;
+  if (focused) {
+    ctx.fillStyle = withAlpha('#0d1611', .88);
+    ctx.fillRect(0, 0, hw, hh);
+    // soft center stage
+    const rg = ctx.createRadialGradient(hw / 2, hh * 0.55, 40, hw / 2, hh * 0.55, hw * 0.55);
+    rg.addColorStop(0, withAlpha(av.accent, .08));
+    rg.addColorStop(1, 'transparent');
+    ctx.fillStyle = rg; ctx.fillRect(0, 0, hw, hh);
+  } else {
+    for (let i = 0; i < HALL_LANES; i++) {
+      const x0 = i * laneW;
+      ctx.fillStyle = withAlpha(i % 2 ? '#0b120e' : '#121c16', .72);
+      ctx.fillRect(x0, 0, laneW + 1, hh);
+      if (i > 0) line(x0, 0, x0, hh, 3, withAlpha(av.accent, .35));
+    }
   }
 
   if (firehoseBubblesPref()) drawHallCloudFeed(hall, hh, laneW);
   else drawHallPlainFeed(hall, hh, laneW);
 
   for (const m of hall.monuments) {
+    if (focused && !m.focused) continue;
     const msStyle = MAGNITUDE_STYLE[m.magnitude] || MAGNITUDE_STYLE.UNKNOWN;
     const near = store.nearby && store.nearby.monument === m;
-    ellipse(m.x, m.y + 32, 34, 11, 'rgba(0,0,0,.22)');
-    roundedRect(m.x - 26, m.y + 4, 52, 26, 7); ctx.fillStyle = '#3D3428'; ctx.fill();
-    blob(m.x, m.y - 16, 22, shade(msStyle.tone, .55), m.rank, 8, .85);
-    ellipse(m.x - 6, m.y - 20, 2.4, 3, '#14231A'); ellipse(m.x + 6, m.y - 20, 2.4, 3, '#14231A');
-    ctx.save(); glow(withAlpha(msStyle.tone, .9), near ? 22 : 10);
-    ellipse(m.x, m.y - 44, 5, 5, msStyle.tone); resetShadow(); ctx.restore();
-    roundedRect(m.x - 15, m.y + 8, 30, 14, 5); ctx.fillStyle = '#FFD166'; ctx.fill();
-    text('#' + m.rank, m.x, m.y + 18, 8, '#14231A');
-    drawConfidencePlaque(m.x + 24, m.y - 4, m.confidence, .75);
-    drawLanguageFerryToken(m.x - 26, m.y - 8, m.language, .6);
-    text(m.channel.slice(0, 13).toUpperCase(), m.x, m.y + 44, 8, near ? '#DFFFD2' : '#FFF4CF');
-    if (near) { ctx.strokeStyle = withAlpha('#53FC18', .5); ctx.lineWidth = 3; ctx.setLineDash([6, 7]); ctx.beginPath(); ctx.ellipse(m.x, m.y, 44, 52, 0, 0, TAU); ctx.stroke(); ctx.setLineDash([]); }
+    const sc = focused ? 1.35 : 1;
+    ellipse(m.x, m.y + 32 * sc, 34 * sc, 11 * sc, 'rgba(0,0,0,.22)');
+    roundedRect(m.x - 26 * sc, m.y + 4 * sc, 52 * sc, 26 * sc, 7); ctx.fillStyle = '#3D3428'; ctx.fill();
+    blob(m.x, m.y - 16 * sc, 22 * sc, shade(msStyle.tone, .55), m.rank, 8, .85);
+    ellipse(m.x - 6 * sc, m.y - 20 * sc, 2.4 * sc, 3 * sc, '#14231A');
+    ellipse(m.x + 6 * sc, m.y - 20 * sc, 2.4 * sc, 3 * sc, '#14231A');
+    ctx.save(); glow(withAlpha(msStyle.tone, .9), near || focused ? 26 : 10);
+    ellipse(m.x, m.y - 44 * sc, 5 * sc, 5 * sc, msStyle.tone); resetShadow(); ctx.restore();
+    roundedRect(m.x - 15 * sc, m.y + 8 * sc, 30 * sc, 14 * sc, 5); ctx.fillStyle = '#FFD166'; ctx.fill();
+    text('#' + m.rank, m.x, m.y + 18 * sc, focused ? 11 : 8, '#14231A');
+    drawConfidencePlaque(m.x + 24 * sc, m.y - 4 * sc, m.confidence, .75);
+    drawLanguageFerryToken(m.x - 26 * sc, m.y - 8 * sc, m.language, .6);
+    text(m.channel.slice(0, focused ? 22 : 13).toUpperCase(), m.x, m.y + 44 * sc, focused ? 12 : 8, near || focused ? '#DFFFD2' : '#FFF4CF');
+    if (near || focused) {
+      ctx.strokeStyle = withAlpha('#53FC18', .55);
+      ctx.lineWidth = 3; ctx.setLineDash([6, 7]);
+      ctx.beginPath(); ctx.ellipse(m.x, m.y, 44 * sc, 52 * sc, 0, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
+    }
   }
   drawAvatar(store.player);
-  roundedRect(hw / 2 - 160, hh - 70, 320, 44, 16); ctx.fillStyle = 'rgba(11,14,15,.78)'; ctx.fill();
-  text('WALK OUT ↓ OR ESC · E ON A MONUMENT', hw / 2, hh - 44, 9, '#FFF4CF');
+  roundedRect(hw / 2 - 180, hh - 70, 360, 44, 16); ctx.fillStyle = 'rgba(11,14,15,.78)'; ctx.fill();
+  text(focused ? 'ESC · ALL LANES  ·  CLICK AVATAR · PROFILE  ·  WORLDS ABOVE' : 'CLICK AVATAR · FOCUS LANE  ·  ESC · LEAVE', hw / 2, hh - 44, 9, '#FFF4CF');
   ctx.restore();
 }
 
@@ -4216,9 +4508,9 @@ function paintWorldMiniature(c, cw, ch, view, lod) {
       c.strokeStyle = withAlpha(r.accent, .5); c.lineWidth = Math.max(1, scale * 16); c.stroke();
     }
     for (const s of WORLD.streets) {
-      // LoD: far out only the trunk web shows; regional roads then trails resolve as you zoom
-      if (lod.zoom < 1.4 && s.style !== 'meta' && s.style !== 'rank') continue;
-      if (s.trail && lod.zoom < 2.4) continue;
+      // Map LoD mirrors world: trunk → regional → trails
+      if (lod.zoom < 1.5 && s.style !== 'meta' && s.style !== 'rank') continue;
+      if (s.trail && lod.zoom < 2.6) continue;
       const st = STREET_STYLE[s.style] || STREET_STYLE.meta;
       c.strokeStyle = withAlpha('#D7C58F', s.style === 'meta' ? .5 : .28);
       c.lineWidth = Math.max(.6, scale * (s.style === 'meta' ? 16 : 9));
@@ -4227,13 +4519,13 @@ function paintWorldMiniature(c, cw, ch, view, lod) {
       c.stroke();
     }
     for (const p of WORLD.places) {
-      if (p.level === 3 && lod.zoom < 2.2) continue; // children resolve on close zoom only
+      if (p.level === 3 && lod.zoom < 2.5) continue; // children resolve on close zoom only
       const rr = Math.max(p.level === 2 ? 2.6 : 1.7, p.r * scale * .45);
       c.beginPath(); c.ellipse(px(p.x), py(p.y), rr, rr * .8, 0, 0, TAU);
       c.fillStyle = withAlpha(p.accent, p.level === 2 ? .95 : .68); c.fill();
     }
     for (const s of WORLD.settlements) { // settlement rings mark the lived-in groupings
-      if (s.tier === 'tribe' && lod.zoom < 1.2) continue;
+      if (s.tier === 'tribe' && lod.zoom < 1.5) continue;
       const td = SETTLEMENT_TIERS[s.tier];
       const rr = Math.max(td.mapDot, s.r * scale * .5);
       c.beginPath(); c.ellipse(px(s.x), py(s.y), rr, rr * .6, 0, 0, TAU);
@@ -4297,9 +4589,9 @@ function paintWorldMiniature(c, cw, ch, view, lod) {
         if (lod.zoom < td.labelZoom) continue;
         drawLabel(s.x, s.y - s.r * .55, td.glyph + ' ' + s.label, s.tier === 'megacity' ? 11 : 9, withAlpha('#FFF4CF', .92), true);
       }
-      if (lod.zoom >= 2.6) for (const p of WORLD.places) if (p.level === 3) drawLabel(p.x, p.y - p.r * .5, p.label, 9, withAlpha(p.accent, .95), true);
-      if (lod.zoom >= 4) for (const p of WORLD.pavilions) drawLabel(p.x, p.y - 40, p.channel, 9, MAGNITUDE_STYLE[p.magnitude].tone, true);
-      if (lod.zoom >= 2) for (const g of WORLD.gates) drawLabel(g.x, g.y + 40, g.label, 9, withAlpha('#DFFFD2', .9), true);
+      if (lod.zoom >= 2.8) for (const p of WORLD.places) if (p.level === 3) drawLabel(p.x, p.y - p.r * .5, p.label, 9, withAlpha(p.accent, .95), true);
+      if (lod.zoom >= 4.2) for (const p of WORLD.pavilions) drawLabel(p.x, p.y - 40, p.channel, 9, MAGNITUDE_STYLE[p.magnitude].tone, true);
+      if (lod.zoom >= 2.2) for (const g of WORLD.gates) drawLabel(g.x, g.y + 40, g.label, 9, withAlpha('#DFFFD2', .9), true);
     } else {
       for (const l of demoLocations) if (l.r > 170) drawLabel(l.x, l.y - l.r * .5, l.name, 10, '#FFF4CF', true);
     }
@@ -4405,7 +4697,7 @@ function drawBigmap() {
     c.clearRect(0, 0, v.cw, v.ch);
     paintWorldMiniature(c, v.cw, v.ch, v, {
       labels: true, zoom: store.mapView.zoomFactor,
-      pavilions: store.mapView.zoomFactor >= 1.6, // LoD: creator dots resolve after settlements
+      pavilions: store.mapView.zoomFactor >= 1.8, // LoD: creator dots after settlements
       graph: store.mapMode === 'graph'
     });
     store.mapView.dirty = false;
@@ -4623,7 +4915,8 @@ function updateWorldState(dt) {
   ui.interact.classList.toggle('show', !!store.nearby);
   ui.interact.textContent = store.nearby ? `E · ${store.nearby.title}` : 'E · INTERACT';
   if (store.scene === 'world') {
-    const targetZoom = clamp(Math.min(W / 1100, H / 700), .68, 1.02);
+    // Fit a readable walkable frame; wider range so FAR↔NEAR LoD bands actually engage
+    const targetZoom = clamp(Math.min(W / 1280, H / 820), LOD.zoomMin, LOD.zoomMax);
     store.camera.zoom = lerp(store.camera.zoom, targetZoom, 1 - Math.pow(.003, dt));
     store.camera.x = lerp(store.camera.x, store.player.x, 1 - Math.pow(.0012, dt));
     store.camera.y = lerp(store.camera.y, store.player.y, 1 - Math.pow(.0012, dt));
@@ -4734,7 +5027,10 @@ function interact(o) {
   else if (o.action === 'compass') openPanel('compass');
   else if (o.action === 'region') openPanel('region', o.regionId);
   else if (o.action === 'place') openPanel('place', o.placeId);
-  else if (o.action === 'creator') openPanel('creator', o.channel);
+  else if (o.action === 'creator') {
+    if (store.scene === 'hall' && o.monument && o.monument.lane != null) focusHallLane(o.monument.lane);
+    else openPanel('creator', o.channel);
+  }
   else if (o.action === 'circle-gen') openPanel('circle-gen', o.circleId);
   else if (o.action === 'hall') enterHall(o.nodeId);
 }
@@ -5136,8 +5432,29 @@ function panelCreator(channel) {
   appendMeter('hardcore score', c.scores.hardcore);
   appendMeter('social intensity', c.scores.socialIntensity, 'amber');
   appendPanelParagraph('World placements help discovery and can be revised as creator behaviour changes. editorial vibe labels are not creator self-identification.');
-  const linkCard = appendMiniCard({ title: 'watch for real', copy: 'the pavilion is a door, not a cage.' });
-  appendExternalLink(linkCard, c.kickUrl, 'Open ' + c.channel + ' on KICK ↗');
+  appendHeading('associated worlds');
+  const worlds = creatorAssociatedWorlds(c.channel);
+  if (worlds.length) {
+    worlds.forEach((w) => {
+      appendResultRow({
+        glyph: w.glyph || '◎', glyphColor: shade(w.accent || '#53FC18', .35),
+        title: w.label, sub: (w.role || 'world') + ' · fast travel',
+        go: 'go',
+        onPick: () => {
+          if (store.scene === 'hall') leaveHall();
+          setTimeout(() => travelToPlaceId(w.id, w.label), 40);
+        }
+      });
+    });
+  } else {
+    appendPanelParagraph('no associated worlds resolved for this creator in the current atlas.');
+  }
+  const kickUrl = kickChannelUrl(c.channel, c.kickUrl);
+  const linkCard = appendMiniCard({ title: 'watch on Kick', copy: 'direct stream · open in a new tab.' });
+  appendExternalLink(linkCard, kickUrl, 'Open ' + c.channel + ' on KICK ↗');
+  if (store.scene === 'hall') {
+    appendAction({ label: '◎ focus their Top 5 lane', action: 'focus-hall-lane', data: { channel: c.channel } });
+  }
 }
 
 /* ---- place / node panel ---- */
@@ -5346,6 +5663,13 @@ ui.panelBody.addEventListener('click', e => {
   else if (a === 'travel-xy') { closePanel(); fastTravelTo(Number(b.dataset.x) || 0, Number(b.dataset.y) || 0, b.dataset.label); }
   else if (a === 'route-graph') { const gid = b.dataset.graph; if (requestRouteTo(gid, null, 'panel route')) closePanel(); }
   else if (a === 'enter-hall') enterHall(b.dataset.node);
+  else if (a === 'focus-hall-lane') {
+    const ch = b.dataset.channel;
+    if (store.hall && ch) {
+      const idx = store.hall.monuments.findIndex(m => String(m.channel).toLowerCase() === String(ch).toLowerCase());
+      if (idx >= 0) { closePanel(); focusHallLane(idx); }
+    }
+  }
 });
 
 function rebuildGeometry() {
@@ -5443,6 +5767,7 @@ addEventListener('keydown', e => {
     else if (ui.pitch.classList.contains('open')) closePitch();
     else if (store.panel) closePanel();
     else if (store.scene === 'room') leaveRoom();
+    else if (store.scene === 'hall' && store.hall && store.hall.focusLane != null) clearHallFocus();
     else if (store.scene === 'hall') leaveHall();
     else if (store.route) { clearRoute(); minimapBaseDirty = true; }
   }
@@ -5464,10 +5789,28 @@ canvas.addEventListener('pointerdown', e => {
     const s = worldToScreen(o.x, o.y), d = Math.hypot(s.x - e.clientX, s.y - e.clientY);
     if (d < bd) { bd = d; best = o; }
   }
-  if (best && bd < 60) { store.clickTarget = { x: best.x, y: best.y + 38 }; store.pendingInteract = best.id; }
+  const hitR = store.scene === 'hall' ? 78 : 60;
+  // Hall: click avatar focuses lane immediately (no walk-to delay)
+  if (store.scene === 'hall' && best && bd < hitR && best.monument) {
+    focusHallLane(best.monument.lane);
+    store.clickTarget = null;
+    store.pendingInteract = null;
+    return;
+  }
+  if (best && bd < hitR) { store.clickTarget = { x: best.x, y: best.y + 38 }; store.pendingInteract = best.id; }
   else { store.clickTarget = p; store.pendingInteract = null; }
 });
 canvas.addEventListener('pointermove', e => {
+  if (store.scene === 'hall') {
+    let best = null, bd = Infinity;
+    for (const o of hallMonumentObjects()) {
+      const s = worldToScreen(o.x, o.y), d = Math.hypot(s.x - e.clientX, s.y - e.clientY);
+      if (d < bd) { bd = d; best = o; }
+    }
+    store.hovered = bd < 72 ? best : null;
+    canvas.style.cursor = store.hovered ? 'pointer' : 'crosshair';
+    return;
+  }
   if (store.scene !== 'world') { store.hovered = null; return; }
   let best = null, bd = Infinity;
   for (const o of worldInteractables()) {
@@ -5531,6 +5874,13 @@ if (ui.hallCatRow) {
 if (ui.hallLiveToggle) {
   ui.hallLiveToggle.addEventListener('change', () => setFirehoseLivePref(ui.hallLiveToggle.checked));
 }
+if (ui.hallFocusBack) ui.hallFocusBack.addEventListener('click', () => clearHallFocus());
+if (ui.hallFocusProfile) {
+  ui.hallFocusProfile.addEventListener('click', () => {
+    const m = store.hall && store.hall.focusLane != null ? store.hall.monuments[store.hall.focusLane] : null;
+    if (m) openPanel('creator', m.channel);
+  });
+}
 mmCanvas.addEventListener('click', openMapOverlay);
 ui.mapExpandBtn.addEventListener('click', openMapOverlay);
 ui.mapCloseBtn.addEventListener('click', closeMapOverlay);
@@ -5567,7 +5917,8 @@ window.KICK_CIRCLES_DEBUG = {
     hall: store.hall ? {
       label: store.hall.label, category: store.hall.category, nodeId: store.hall.nodeId,
       monuments: store.hall.monuments.map((m) => ({
-        channel: m.channel, feed: m.feed ? m.feed.length : 0,
+        channel: m.channel, chatClass: laneChatClass(store.hall, m),
+        feed: m.feed ? m.feed.length : 0,
         clouds: m.clouds ? m.clouds.length : 0, live: !!m.live,
       })),
     } : null,
@@ -5615,6 +5966,8 @@ window.KICK_CIRCLES_DEBUG = {
   exportDebugReport,
   enterHall,
   leaveHall,
+  focusHallLane,
+  clearHallFocus,
   setHallCategory
 };
 

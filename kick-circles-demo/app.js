@@ -1004,20 +1004,36 @@ const MOOD_LINES = {
 
 const REACT_MOOD = { '🔥': 'hype', '😂': 'hype', '👏': 'cozy', '👀': 'confused', '❓': 'confused', '💀': 'tilt' };
 
-const MOOD_ACTIONS = [
-  { id: 'explain', when: 'confused', label: 'Answer the confusion', ic: '💡',
-    say: 'Streamer answered: it\u2019s a Sony FX3 with a 16mm — pinned for everyone who asked.', to: 'cozy' },
-  { id: 'poll', when: 'drift', label: 'Wake chat with a poll', ic: '🗳️',
-    say: 'Poll opened by the streamer: where should the crew go next?', to: 'hype' },
-  { id: 'storm', when: 'hype', label: 'Ride it — Emote Storm', ic: '🌪️',
-    say: 'Emote Storm triggered — chat, pick your side.', to: 'hype' },
-  { id: 'cool', when: 'tilt', label: 'Cool it down', ic: '🧊',
-    say: 'Streamer: fair call, let me explain what I was going for.', to: 'cozy' },
-  { id: 'shout', when: 'cozy', label: 'Shout out the regulars', ic: '📣',
-    say: 'Streamer shouted out tonight\u2019s regulars — you were one of them.', to: 'hype' },
+/* Instruments push chat along the valence/arousal plane.
+   dv = valence change, da = arousal change. Effect scales with
+   intensity and shrinks as chat gets fatigued. */
+const INSTRUMENTS = [
+  { id: 'explain', ic: '💡', name: 'Explain it', dv: 0.85, da: -0.25, cost: 8,
+    when: 'confused', desc: 'clears confusion',
+    say: 'Streamer answered: Sony FX3, 16mm — pinned for everyone who asked.' },
+  { id: 'poll', ic: '🗳️', name: 'Run a poll', dv: 0.25, da: 0.8, cost: 14,
+    when: 'drift', desc: 'wakes a quiet chat',
+    say: 'Poll opened by the streamer: where should the crew go next?' },
+  { id: 'storm', ic: '🌪️', name: 'Emote Storm', dv: 0.4, da: 0.95, cost: 22,
+    when: 'hype', desc: 'amplifies energy',
+    say: 'Emote Storm triggered — chat, pick your side.' },
+  { id: 'cool', ic: '🧊', name: 'Cool it down', dv: 0.7, da: -0.85, cost: 10,
+    when: 'tilt', desc: 'defuses anger',
+    say: 'Streamer: fair call — let me explain what I was going for.' },
+  { id: 'shout', ic: '📣', name: 'Shout-out', dv: 0.95, da: 0.35, cost: 16,
+    when: 'cozy', desc: 'rewards the regulars',
+    say: 'Streamer shouted out tonight\u2019s regulars — you were one of them.' },
+  { id: 'ask', ic: '🎤', name: 'Ask chat', dv: 0.3, da: 0.5, cost: 9,
+    when: null, desc: 'pulls chat back in',
+    say: 'Streamer asked chat: what should we do for the last hour?' },
 ];
 
+/* confused sits at the centre, so widen its catchment penalty or it
+   swallows every agent that drifts near the origin */
+const MOOD_PULL = { hype: 1, cozy: 1, tilt: 1, drift: 1, confused: 1.45 };
+
 let agents = [];
+let zones = [];
 let moodPaused = false;
 let moodEvents = [];
 let moodHistory = [];
@@ -1026,8 +1042,13 @@ let moodShowLabels = true;
 let moodRAF = null;
 let lastMoodTick = 0;
 let lastDominant = null;
+let fatigue = 0;
+let intensity = 0.6;
+let lasso = null;
+let bigPad = 34;
 
 function seedAgents() {
+  fatigue = 0;
   const mix = { hype: 14, cozy: 12, tilt: 5, drift: 9, confused: 6 };
   const names = ['NightOwl', 'ClipLord', 'TokyoDrift', 'KEKWKing', 'PixelPam', 'neon_nova', 'orbitron',
     'speedrunner88', 'chatlurker', 'gg_enjoyer', 'MoonMile', 'CutKing', 'ReelRat', 'StreetCam'];
@@ -1067,6 +1088,73 @@ function nudgeMood(mood, count = 2, mine = false) {
   pushMoodEvent(mood, mine ? 'SpookyBunny' : agents[0].name, line, mine);
 }
 
+/* mood follows position, so an instrument that moves someone
+   actually changes what they are — not just where they sit */
+function moodAt(x, y) {
+  let best = MOOD_KEYS[0]; let bd = Infinity;
+  MOOD_KEYS.forEach((k) => {
+    const M = MOODS[k];
+    const d = Math.hypot(M.v - x, M.a - y) * MOOD_PULL[k];
+    if (d < bd) { bd = d; best = k; }
+  });
+  return best;
+}
+
+/* DBSCAN — zones emerge from where chatters actually are,
+   rather than being drawn around a label we assigned them */
+function clusterAgents(eps = 0.3, minPts = 3) {
+  const n = agents.length;
+  const labels = new Array(n).fill(-1);
+  const region = (i) => {
+    const out = [];
+    for (let j = 0; j < n; j++) {
+      if (Math.hypot(agents[i].x - agents[j].x, agents[i].y - agents[j].y) <= eps) out.push(j);
+    }
+    return out;
+  };
+
+  let cid = 0;
+  for (let i = 0; i < n; i++) {
+    if (labels[i] !== -1) continue;
+    const nb = region(i);
+    if (nb.length < minPts) { labels[i] = -2; continue; }
+    labels[i] = cid;
+    const queue = nb.slice();
+    while (queue.length) {
+      const j = queue.pop();
+      if (labels[j] === -2) labels[j] = cid;
+      if (labels[j] !== -1) continue;
+      labels[j] = cid;
+      const nb2 = region(j);
+      if (nb2.length >= minPts) queue.push(...nb2);
+    }
+    cid += 1;
+  }
+
+  agents.forEach((a, i) => { a.zone = labels[i]; });
+
+  const out = [];
+  for (let c = 0; c < cid; c++) {
+    const mem = agents.filter((a) => a.zone === c);
+    if (!mem.length) continue;
+    const counts = {};
+    MOOD_KEYS.forEach((k) => { counts[k] = 0; });
+    mem.forEach((a) => { counts[a.mood] += 1; });
+    const dom = MOOD_KEYS.reduce((b, k) => (counts[k] > counts[b] ? k : b), MOOD_KEYS[0]);
+    out.push({
+      id: c,
+      name: `ZONE ${String.fromCharCode(65 + c)}`,
+      members: mem,
+      size: mem.length,
+      dom,
+      purity: Math.round((counts[dom] / mem.length) * 100),
+      cx: mem.reduce((s, a) => s + a.x, 0) / mem.length,
+      cy: mem.reduce((s, a) => s + a.y, 0) / mem.length,
+    });
+  }
+  zones = out.sort((a, b) => b.size - a.size);
+}
+
 function stepMood(dt) {
   agents.forEach((a) => {
     const M = MOODS[a.mood];
@@ -1077,6 +1165,15 @@ function stepMood(dt) {
     a.y = Math.max(-1, Math.min(1, a.y + a.vy * dt));
     a.ph += dt * 2;
   });
+
+  /* mood is contagious — sitting next to a mood pulls you into it */
+  if (Math.random() < dt * 6) {
+    const a = agents[Math.floor(Math.random() * agents.length)];
+    const near = agents.filter((b) => b !== a && Math.hypot(a.x - b.x, a.y - b.y) < 0.32);
+    if (near.length >= 2) a.mood = near[Math.floor(Math.random() * near.length)].mood;
+  }
+
+  fatigue = Math.max(0, fatigue - dt * 1.6);
 
   if (Math.random() < dt * 1.6) {
     const a = agents[Math.floor(Math.random() * agents.length)];
@@ -1108,8 +1205,52 @@ function moodMetrics() {
     confusion: Math.round((counts.confused / n) * 100),
     split: Math.min(100, split),
     rate: Math.round(46 + ((avgA + 1) / 2) * 90),
-    zones: MOOD_KEYS.filter((k) => counts[k] >= 4).length,
+    zones: zones.length,
+    selected: agents.filter((a) => a.sel).length,
   };
+}
+
+/* one suggestion, ranked by severity — never two competing "do this now" */
+function suggestion(m) {
+  if (m.confusion >= 16) return 'explain';
+  if (m.dominant === 'tilt') return 'cool';
+  if (m.dominant === 'drift') return 'poll';
+  if (m.dominant === 'hype') return 'storm';
+  if (m.dominant === 'cozy') return 'shout';
+  return 'ask';
+}
+
+function targetAgents() {
+  const s = agents.filter((a) => a.sel);
+  return s.length ? s : agents;
+}
+
+function fireInstrument(id) {
+  const ins = INSTRUMENTS.find((x) => x.id === id);
+  if (!ins) return;
+
+  const targets = targetAgents();
+  const damp = 1 - Math.min(0.8, fatigue / 100);
+  const k = intensity * damp;
+
+  targets.forEach((a) => {
+    a.x = Math.max(-1, Math.min(1, a.x + ins.dv * k * (0.65 + Math.random() * 0.7)));
+    a.y = Math.max(-1, Math.min(1, a.y + ins.da * k * (0.65 + Math.random() * 0.7)));
+    a.mood = moodAt(a.x, a.y);
+  });
+
+  fatigue = Math.min(100, fatigue + ins.cost * intensity);
+
+  const scope = targets.length === agents.length ? 'all of chat' : `${targets.length} chatters in the selected zone`;
+  CHAT_CIRCLE.push({ id: `sys${Date.now()}`, system: true, text: `⚡ ${ins.say}` });
+  pushMoodEvent(moodAt(0.4, 0.4), 'streamer', `${ins.name} → ${scope}`, true);
+
+  if (fatigue > 70) toast('Chat is getting numb', 'Overusing instruments dulls the response — ease off', '🥱');
+  else toast('Sent to chat', `${ins.name} · ${scope}`, ins.ic);
+
+  clusterAgents();
+  renderChat();
+  renderMoodUI();
 }
 
 /* convex hull — monotone chain */
@@ -1178,28 +1319,35 @@ function drawMood(cv, big) {
   }
 
   if (moodShowHulls) {
-    MOOD_KEYS.forEach((k) => {
-      const pts = agents.filter((a) => a.mood === k).map((a) => [X(a.x), Y(a.y)]);
-      if (pts.length < 4) return;
+    zones.forEach((z) => {
+      const pts = z.members.map((a) => [X(a.x), Y(a.y)]);
+      if (pts.length < 3) return;
       const hl = hull(pts);
       if (hl.length < 3) return;
+      const col = MOODS[z.dom].color;
+      const picked = z.members.some((a) => a.sel);
+
       g.beginPath(); g.moveTo(hl[0][0], hl[0][1]);
       hl.slice(1).forEach((p) => g.lineTo(p[0], p[1]));
       g.closePath();
-      g.fillStyle = `${MOODS[k].color}14`; g.fill();
-      g.strokeStyle = `${MOODS[k].color}66`; g.lineWidth = 1.4; g.stroke();
+      g.fillStyle = `${col}${picked ? '26' : '12'}`; g.fill();
+      g.strokeStyle = picked ? '#ffffff' : `${col}66`;
+      g.lineWidth = picked ? 2 : 1.4;
+      g.setLineDash(picked ? [5, 3] : []);
+      g.stroke();
+      g.setLineDash([]);
 
       if (moodShowLabels && big) {
-        const cxp = hl.reduce((s, p) => s + p[0], 0) / hl.length;
-        const cyp = hl.reduce((s, p) => s + p[1], 0) / hl.length;
-        const txt = `${MOODS[k].label.toUpperCase()} · ${pts.length}`;
+        const txt = `${z.name} · ${z.size} · ${z.purity}% ${MOODS[z.dom].label}`;
         g.font = '800 9px Inter, sans-serif'; g.textAlign = 'center';
-        const tw = g.measureText(txt).width + 12;
-        g.fillStyle = 'rgba(8,10,11,.88)';
-        g.fillRect(cxp - tw / 2, cyp - 8, tw, 16);
-        g.strokeStyle = `${MOODS[k].color}88`; g.lineWidth = 1;
-        g.strokeRect(cxp - tw / 2, cyp - 8, tw, 16);
-        g.fillStyle = MOODS[k].color; g.fillText(txt, cxp, cyp + 3);
+        const tw = g.measureText(txt).width + 13;
+        const lx = X(z.cx); const ly = Y(z.cy);
+        g.fillStyle = 'rgba(8,10,11,.9)';
+        g.fillRect(lx - tw / 2, ly - 8, tw, 16);
+        g.strokeStyle = picked ? '#fff' : `${col}88`; g.lineWidth = 1;
+        g.strokeRect(lx - tw / 2, ly - 8, tw, 16);
+        g.fillStyle = picked ? '#fff' : col;
+        g.fillText(txt, lx, ly + 3);
       }
     });
   }
@@ -1215,7 +1363,89 @@ function drawMood(cv, big) {
     g.beginPath(); g.arc(px, py, rr * 4, 0, 6.29); g.fill();
     g.fillStyle = c;
     g.beginPath(); g.arc(px, py, rr, 0, 6.29); g.fill();
+    if (a.sel) {
+      g.strokeStyle = '#fff'; g.lineWidth = 1.6;
+      g.beginPath(); g.arc(px, py, rr + 4, 0, 6.29); g.stroke();
+    }
   });
+
+  if (big && lasso && lasso.live) {
+    const x0 = Math.min(lasso.x0, lasso.x1); const y0 = Math.min(lasso.y0, lasso.y1);
+    const ww = Math.abs(lasso.x1 - lasso.x0); const hh = Math.abs(lasso.y1 - lasso.y0);
+    g.fillStyle = 'rgba(83,252,24,.09)';
+    g.fillRect(x0, y0, ww, hh);
+    g.strokeStyle = 'rgba(83,252,24,.75)'; g.lineWidth = 1.3;
+    g.setLineDash([5, 4]); g.strokeRect(x0, y0, ww, hh); g.setLineDash([]);
+  }
+}
+
+/* ─── TACTICAL SELECTION ───────────────────────────────── */
+
+function canvasToVal(cv, px, py) {
+  const w = cv.clientWidth; const h = cv.clientHeight; const p = bigPad;
+  return [
+    ((px - p) / (w - p * 2)) * 2 - 1,
+    ((h - p - py) / (h - p * 2)) * 2 - 1,
+  ];
+}
+
+function clearSelection() {
+  agents.forEach((a) => { a.sel = false; });
+  renderMoodUI();
+}
+
+function selectZone(id) {
+  const z = zones.find((x) => x.id === id);
+  if (!z) return;
+  const already = z.members.every((a) => a.sel) && agents.filter((a) => a.sel).length === z.size;
+  agents.forEach((a) => { a.sel = false; });
+  if (!already) z.members.forEach((a) => { a.sel = true; });
+  renderMoodUI();
+}
+
+function bindMoodCanvas() {
+  const cv = $('moodBig');
+  if (!cv || cv.dataset.bound) return;
+  cv.dataset.bound = '1';
+
+  const pos = (e) => {
+    const r = cv.getBoundingClientRect();
+    return [e.clientX - r.left, e.clientY - r.top];
+  };
+
+  cv.onmousedown = (e) => {
+    const [px, py] = pos(e);
+    lasso = { x0: px, y0: py, x1: px, y1: py, live: true, moved: false };
+  };
+  cv.onmousemove = (e) => {
+    if (!lasso || !lasso.live) return;
+    const [px, py] = pos(e);
+    lasso.x1 = px; lasso.y1 = py;
+    if (Math.hypot(px - lasso.x0, py - lasso.y0) > 6) lasso.moved = true;
+  };
+  cv.onmouseup = (e) => {
+    if (!lasso) return;
+    const [px, py] = pos(e);
+
+    if (!lasso.moved) {
+      const [vx, vy] = canvasToVal(cv, px, py);
+      let best = null; let bd = Infinity;
+      zones.forEach((z) => {
+        const d = Math.hypot(z.cx - vx, z.cy - vy);
+        if (d < bd) { bd = d; best = z; }
+      });
+      if (best && bd < 0.45) selectZone(best.id); else clearSelection();
+    } else {
+      const [ax, ay] = canvasToVal(cv, Math.min(lasso.x0, lasso.x1), Math.max(lasso.y0, lasso.y1));
+      const [bx, by] = canvasToVal(cv, Math.max(lasso.x0, lasso.x1), Math.min(lasso.y0, lasso.y1));
+      agents.forEach((a) => { a.sel = a.x >= ax && a.x <= bx && a.y >= ay && a.y <= by; });
+      const n = agents.filter((a) => a.sel).length;
+      toast('Tactical zone drawn', n ? `${n} chatters selected` : 'nobody in that region', '🎯');
+      renderMoodUI();
+    }
+    lasso = null;
+  };
+  cv.onmouseleave = () => { lasso = null; };
 }
 
 function drawSpark() {
@@ -1278,34 +1508,46 @@ function renderMoodUI() {
         <span class="mm-ev-t">${e.mine ? 'you' : 'now'}</span>
       </div>`).join('');
 
-    $('mmActions').innerHTML = MOOD_ACTIONS.map((a) => {
-      const hot = a.when === m.dominant || (a.id === 'explain' && m.confusion >= 18);
-      return `<button class="mm-action ${hot ? 'hot' : ''}" data-mood-action="${a.id}">
-        <span class="mm-a-ic">${a.ic}</span>
-        <div><b>${a.label}</b><small>${hot ? 'suggested now' : `when chat is ${MOODS[a.when].label.toLowerCase()}`}</small></div>
-      </button>`;
-    }).join('');
+    const sug = suggestion(m);
+    const sel = m.selected;
 
-    document.querySelectorAll('[data-mood-action]').forEach((b) => {
-      b.onclick = () => runMoodAction(b.dataset.moodAction);
-    });
+    $('mmZones').innerHTML = zones.length
+      ? zones.map((z) => {
+        const on = z.members.some((a) => a.sel);
+        return `<button class="zone-chip ${on ? 'on' : ''}" data-zone="${z.id}"
+            style="--zc:${MOODS[z.dom].color}">
+            <b>${z.name}</b><span>${z.size} · ${z.purity}% ${MOODS[z.dom].label}</span></button>`;
+      }).join('') + (sel ? '<button class="zone-chip clear" id="zoneClear">Clear selection</button>' : '')
+      : '<span class="muted small">No zone has enough density right now — chat is scattered.</span>';
+
+    $('mcTarget').innerHTML = sel
+      ? `<b>🎯 ${sel} chatters</b><small>tactical zone — only they are affected</small>`
+      : `<b>◎ All of chat</b><small>click a zone or drag on the map to target a group</small>`;
+
+    $('mcInstruments').innerHTML = INSTRUMENTS.map((ins) => `
+      <button class="mc-ins ${ins.id === sug ? 'hot' : ''}" data-ins="${ins.id}">
+        <span class="mc-ic">${ins.ic}</span>
+        <div><b>${ins.name}</b><small>${ins.id === sug ? 'suggested now' : ins.desc}</small></div>
+        <span class="mc-vec">${ins.dv > 0 ? '+' : ''}${ins.dv.toFixed(1)}v ${ins.da > 0 ? '+' : ''}${ins.da.toFixed(1)}a</span>
+      </button>`).join('');
+
+    $('mcIntVal').textContent = `${Math.round(intensity * 100)}%`;
+    $('mcFatVal').textContent = `${Math.round(fatigue)}%`;
+    $('mcFatBar').style.width = `${fatigue}%`;
+    $('mcFatNote').textContent = fatigue > 70
+      ? 'Chat is numb — instruments barely land'
+      : fatigue > 35 ? 'Response is dulling, give it a rest' : 'Chat responds fully';
+    $('mcFatBar').classList.toggle('hot', fatigue > 70);
+
+    document.querySelectorAll('[data-ins]').forEach((b) => { b.onclick = () => fireInstrument(b.dataset.ins); });
+    document.querySelectorAll('[data-zone]').forEach((b) => { b.onclick = () => selectZone(+b.dataset.zone); });
+    if ($('zoneClear')) $('zoneClear').onclick = clearSelection;
   }
 
   if (m.dominant !== lastDominant) {
     if (lastDominant) toast('Chat mood shifted', `${MOODS[lastDominant].label} → ${D.label} · ${D.read}`, D.ic);
     lastDominant = m.dominant;
   }
-}
-
-function runMoodAction(id) {
-  const a = MOOD_ACTIONS.find((x) => x.id === id);
-  if (!a) return;
-  CHAT_CIRCLE.push({ id: `sys${Date.now()}`, system: true, text: `⚡ ${a.say}` });
-  nudgeMood(a.to, 7);
-  pushMoodEvent(a.to, 'streamer', a.say, true);
-  toast('Sent to chat', a.label, a.ic);
-  renderChat();
-  renderMoodUI();
 }
 
 function moodLoop(ts) {
@@ -1318,6 +1560,7 @@ function moodLoop(ts) {
     stepMood(dt);
     if (!moodLoop.acc || ts - moodLoop.acc > 700) {
       moodLoop.acc = ts;
+      clusterAgents();
       moodHistory.push(moodMetrics().index);
       if (moodHistory.length > 42) moodHistory.shift();
       renderMoodUI();
@@ -1332,6 +1575,8 @@ function moodLoop(ts) {
 function openMoodModal() {
   $('moodModal').classList.add('open');
   $('moodLegendBig').innerHTML = legendHtml();
+  clusterAgents();
+  bindMoodCanvas();
   renderMoodUI();
 }
 
@@ -1456,6 +1701,10 @@ function init() {
   $('mmLabels').onclick = () => { moodShowLabels = !moodShowLabels; $('mmLabels').classList.toggle('on', moodShowLabels); };
   $('mmHulls').classList.add('on');
   $('mmLabels').classList.add('on');
+  $('mcIntensity').oninput = (e) => {
+    intensity = e.target.value / 100;
+    $('mcIntVal').textContent = `${e.target.value}%`;
+  };
   document.querySelectorAll('.event-tab').forEach((b) => {
     b.onclick = () => {
       activeEvent = b.dataset.event;

@@ -444,6 +444,12 @@
     <div class="mm-canvas-wrap">
       <canvas id="moodBig"></canvas>
       <div class="mm-legend" id="moodLegendBig"></div>
+      <div class="mm-hint">Click a zone to target it · drag to draw a tactical zone</div>
+    </div>
+
+    <div class="mm-zonebar">
+      <span class="mm-zonebar-label">Detected zones <small>DBSCAN over live positions</small></span>
+      <div class="mm-zones" id="mmZones"></div>
     </div>
 
     <div class="mm-grid">
@@ -458,10 +464,22 @@
         <div class="mm-events" id="mmEvents"></div>
       </div>
 
-      <div class="mm-panel mm-actions-panel">
-        <h3>Streamer response <span class="coop">closes the loop</span></h3>
-        <p class="muted small">The map spots it, one tap answers it, and chat sees the reply. This is the back-and-forth.</p>
-        <div class="mm-actions" id="mmActions"></div>
+      <div class="mm-panel mm-console">
+        <h3>Mood console <span class="coop">instrument</span></h3>
+
+        <div class="mc-target" id="mcTarget"></div>
+        <div class="mc-instruments" id="mcInstruments"></div>
+
+        <div class="mc-intensity">
+          <label>Intensity <span id="mcIntVal">60%</span></label>
+          <input type="range" id="mcIntensity" min="20" max="100" value="60" />
+        </div>
+
+        <div class="mc-fatigue">
+          <div class="mc-f-label">Chat fatigue <span id="mcFatVal">0%</span></div>
+          <div class="mc-f-bar"><span id="mcFatBar"></span></div>
+          <div class="mc-f-note" id="mcFatNote">Chat responds fully</div>
+        </div>
       </div>
     </div>
 

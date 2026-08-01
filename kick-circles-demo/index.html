@@ -20,7 +20,7 @@
 
   <nav class="nav" id="mainNav">
     <button class="nav-btn active" data-view="stream">Stream</button>
-    <button class="nav-btn" data-view="circles">My Circles</button>
+    <button class="nav-btn" data-view="circles">Overworld</button>
     <button class="nav-btn" data-view="quests">Quests</button>
     <button class="nav-btn" data-view="pass">Circle Pass</button>
     <button class="nav-btn" data-view="profile">Profile</button>
@@ -176,107 +176,130 @@
 
         <div class="quick-react" id="quickReact"></div>
 
+        <!-- STREAMER CUES — land as real Circle messages -->
+        <div class="cue-strip" id="cueStrip">
+          <span class="cue-label">Streamer cue</span>
+          <div class="cue-btns" id="cueBtns"></div>
+        </div>
+
         <form class="chat-input-row" id="chatForm">
-          <input id="chatInput" type="text" placeholder="Send a message…" maxlength="200" autocomplete="off" />
+          <input id="chatInput" type="text" placeholder="Send a message… try KEKW, ???, L, or comfy" maxlength="200" autocomplete="off" />
           <button type="submit">Chat</button>
         </form>
       </aside>
     </div>
   </section>
 
-  <!-- ══════════════════ MY CIRCLES ══════════════════ -->
-  <section class="view" id="view-circles">
-    <div class="page-head">
-      <div>
-        <h1>My Circles</h1>
-        <p class="muted">Communities formed from what you already watch. Membership is private by default.</p>
-      </div>
-      <button class="primary-btn sm" id="openInviteBtn">View pending invitation</button>
-    </div>
+  <!-- ══════════════════ OVERWORLD (isolated iframe) + My Circles dock ══════════════════ -->
+  <section class="view overworld-view" id="view-circles">
+    <div class="overworld-shell">
+      <!--
+        Compartment boundary: the walkable world runs in this iframe only.
+        Host CSS/JS and overworld CSS/JS never share a document.
+        Talk exclusively via postMessage (see overworld/bridge.js + OverworldBridge in app.js).
+      -->
+      <iframe
+        id="overworldFrame"
+        title="KICK Circles Overworld"
+        data-src="overworld/index.html?embed=1"
+        src="about:blank"
+        allow="fullscreen"
+      ></iframe>
 
-    <div class="circle-cards" id="circleCards"></div>
+      <button class="dock-fab" id="dockToggle" type="button" title="My Circles dock">
+        <span>◎</span> My Circles
+      </button>
 
-    <!-- SELECTED CIRCLE DETAIL -->
-    <div class="detail-head" id="detailHead"></div>
-
-    <div class="split-2">
-      <div class="panel">
-        <div class="block-head"><h2>Circle Map</h2><span class="muted">Every edge is explainable</span></div>
-        <div class="map-wrap" id="mapWrap"></div>
-        <div class="map-legend">
-          <span><i class="dot you"></i> You</span>
-          <span><i class="dot creator"></i> Creator you watch</span>
-          <span><i class="dot linked"></i> Connected creator</span>
-          <span><i class="dot circle"></i> Circle</span>
-        </div>
-
-        <div class="detect-block">
-          <h3>How this Circle was detected</h3>
-          <div class="detect-grid" id="detectGrid"></div>
-          <div class="formula">
-            <code id="detectRule"></code>
-            <span class="muted">Clusters below the activity floor never launch. Existing Circles below it are merged or archived.</span>
+      <aside class="circles-dock" id="circlesDock" aria-label="My Circles">
+        <div class="dock-head">
+          <div>
+            <h2>My Circles</h2>
+            <p class="muted small" id="owZoneHint">Walk the overworld · dock holds the why</p>
           </div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="block-head"><h2>Why you belong</h2><span class="muted">every invite states its reason</span></div>
-        <ul class="reason-list" id="reasonList"></ul>
-
-        <div class="score-block">
-          <h3>Circle Score breakdown</h3>
-          <div class="score-bars" id="scoreBars"></div>
-          <div class="formula">
-            <code>Score = 0.30·Consistency + 0.25·Participation + 0.25·Contribution + 0.20·Discovery</code>
-            <span class="muted">28-day rolling · 200/day cap · linear decay</span>
+          <div class="dock-head-actions">
+            <button class="primary-btn sm" id="openInviteBtn">Invitation</button>
+            <button class="ghost-btn" id="dockClose" type="button" title="Close dock">✕</button>
           </div>
         </div>
 
-        <div class="mission-block">
-          <h3>Weekly Circle mission <span class="coop">co-op</span></h3>
-          <p class="muted" id="missionDesc"></p>
-          <div class="mission-bar"><span id="missionBar"></span></div>
-          <div class="mission-meta"><span id="missionCount"></span><span id="missionMembers"></span></div>
+        <div class="circle-cards" id="circleCards"></div>
+
+        <div class="detail-head" id="detailHead"></div>
+
+        <div class="panel dock-panel">
+          <div class="block-head"><h2>Affinity map</h2><span class="muted">explainable edges</span></div>
+          <div class="map-wrap" id="mapWrap"></div>
+          <div class="map-legend">
+            <span><i class="dot you"></i> You</span>
+            <span><i class="dot creator"></i> Creator</span>
+            <span><i class="dot linked"></i> Linked</span>
+            <span><i class="dot circle"></i> Circle</span>
+          </div>
+
+          <div class="detect-block">
+            <h3>How this Circle was detected</h3>
+            <div class="detect-grid" id="detectGrid"></div>
+            <div class="formula">
+              <code id="detectRule"></code>
+              <span class="muted">Below the activity floor → merge or archive.</span>
+            </div>
+          </div>
         </div>
 
-        <div class="unlock-block">
-          <h3>Collective unlock <span class="coop">whole Circle</span></h3>
-          <p class="muted">Every reaction from every member counts toward a custom Circle emote.</p>
-          <div class="mission-bar"><span id="collectiveBar"></span></div>
-          <div class="mission-meta"><span id="collectiveCount"></span><span>unlocks 🌪️ CHAOS emote</span></div>
-        </div>
-      </div>
-    </div>
+        <div class="panel dock-panel">
+          <div class="block-head"><h2>Why you belong</h2></div>
+          <ul class="reason-list" id="reasonList"></ul>
 
-    <div class="panel safety-panel">
-      <div class="block-head">
-        <h2>Privacy &amp; safety</h2>
-        <span class="muted">Safety is a product surface, not a policy page</span>
-      </div>
-      <div class="safety-grid">
-        <label class="toggle-row">
-          <div><b>Hide my membership</b><small>Nobody can see which Circles you're in</small></div>
-          <input type="checkbox" class="sw" data-priv="hideMembership" checked />
-        </label>
-        <label class="toggle-row">
-          <div><b>Appear on leaderboard</b><small>Your score is private until you opt in</small></div>
-          <input type="checkbox" class="sw" data-priv="showLeaderboard" />
-        </label>
-        <label class="toggle-row">
-          <div><b>Circle chat slow mode</b><small>One message every 30 seconds</small></div>
-          <input type="checkbox" class="sw" data-priv="slowMode" checked />
-        </label>
-        <label class="toggle-row">
-          <div><b>Account-age gate</b><small>New accounts can read but not post for 24h</small></div>
-          <input type="checkbox" class="sw" data-priv="ageGate" checked />
-        </label>
-      </div>
-      <div class="safety-actions">
-        <button class="action-btn">⚑ Report a member</button>
-        <button class="action-btn">📄 Circle rules</button>
-        <button class="action-btn danger" id="leaveBtn">Leave Circle</button>
-      </div>
+          <div class="score-block">
+            <h3>Circle Score</h3>
+            <div class="score-bars" id="scoreBars"></div>
+            <div class="formula">
+              <code>0.30·Consistency + 0.25·Participation + 0.25·Contribution + 0.20·Discovery</code>
+              <span class="muted">28-day rolling · 200/day cap · decay</span>
+            </div>
+          </div>
+
+          <div class="mission-block">
+            <h3>Weekly mission <span class="coop">co-op</span></h3>
+            <p class="muted" id="missionDesc"></p>
+            <div class="mission-bar"><span id="missionBar"></span></div>
+            <div class="mission-meta"><span id="missionCount"></span><span id="missionMembers"></span></div>
+          </div>
+
+          <div class="unlock-block">
+            <h3>Collective unlock</h3>
+            <p class="muted">Whole Circle reactions → shared emote.</p>
+            <div class="mission-bar"><span id="collectiveBar"></span></div>
+            <div class="mission-meta"><span id="collectiveCount"></span><span>🌪️ CHAOS</span></div>
+          </div>
+        </div>
+
+        <div class="panel dock-panel safety-panel">
+          <div class="block-head"><h2>Privacy &amp; safety</h2></div>
+          <div class="safety-grid">
+            <label class="toggle-row">
+              <div><b>Hide my membership</b><small>Private by default</small></div>
+              <input type="checkbox" class="sw" data-priv="hideMembership" checked />
+            </label>
+            <label class="toggle-row">
+              <div><b>Appear on leaderboard</b><small>Opt-in only</small></div>
+              <input type="checkbox" class="sw" data-priv="showLeaderboard" />
+            </label>
+            <label class="toggle-row">
+              <div><b>Circle chat slow mode</b><small>30s between messages</small></div>
+              <input type="checkbox" class="sw" data-priv="slowMode" checked />
+            </label>
+            <label class="toggle-row">
+              <div><b>Account-age gate</b><small>Read-only for 24h</small></div>
+              <input type="checkbox" class="sw" data-priv="ageGate" checked />
+            </label>
+          </div>
+          <div class="safety-actions">
+            <button class="action-btn" type="button" id="owTravelBtn">⚡ Find in overworld</button>
+            <button class="action-btn danger" id="leaveBtn" type="button">Leave Circle</button>
+          </div>
+        </div>
+      </aside>
     </div>
   </section>
 
@@ -444,7 +467,7 @@
     <div class="mm-canvas-wrap">
       <canvas id="moodBig"></canvas>
       <div class="mm-legend" id="moodLegendBig"></div>
-      <div class="mm-hint">Click a zone to target it · drag to draw a tactical zone</div>
+      <div class="mm-hint">Click a zone to focus · drag a tactical zone · cues land harder there</div>
     </div>
 
     <div class="mm-zonebar">
@@ -464,22 +487,14 @@
         <div class="mm-events" id="mmEvents"></div>
       </div>
 
-      <div class="mm-panel mm-console">
-        <h3>Mood console <span class="coop">instrument</span></h3>
-
+      <div class="mm-panel">
+        <h3>Chat instruments <span class="coop">native</span></h3>
+        <p class="muted small">No dashboard buttons. Mood moves when Circle chat moves.</p>
+        <div class="mm-how" id="mmHow"></div>
         <div class="mc-target" id="mcTarget"></div>
-        <div class="mc-instruments" id="mcInstruments"></div>
-
-        <div class="mc-intensity">
-          <label>Intensity <span id="mcIntVal">60%</span></label>
-          <input type="range" id="mcIntensity" min="20" max="100" value="60" />
-        </div>
-
-        <div class="mc-fatigue">
-          <div class="mc-f-label">Chat fatigue <span id="mcFatVal">0%</span></div>
-          <div class="mc-f-bar"><span id="mcFatBar"></span></div>
-          <div class="mc-f-note" id="mcFatNote">Chat responds fully</div>
-        </div>
+        <h4 class="mm-cue-head">Streamer drops a cue into Circle</h4>
+        <div class="mm-cues" id="mmCues"></div>
+        <div class="mm-last-cue" id="mmLastCue"></div>
       </div>
     </div>
 

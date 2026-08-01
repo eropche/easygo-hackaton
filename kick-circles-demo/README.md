@@ -43,10 +43,11 @@ to that state — use it right before presenting.
 per-message reactions, live event panel (Poll · Prediction · Emote Storm · Quiz · **Pulse**),
 and trending clips ranked by Circle reactions rather than views.
 
-**My Circles** — three detectable Circles, each fully selectable. Clicking a card swaps the
-detail view: Circle Map, "How this Circle was detected" thresholds, why-you-belong reasons,
-Circle Score breakdown, weekly co-op mission, and a collective unlock the whole Circle shares.
-Below it, working privacy and safety toggles.
+**Overworld** — walkable Animal-Crossing-style Circles world (WASD / click / E / M), loaded
+from `overworld/` inside an **iframe compartment** so its code cannot break Stream/Mood and
+vice versa. The best of **My Circles** lives in a host-side dock over the world: selectable
+Circle cards, affinity map, detection thresholds, Circle Score, weekly mission, collective
+unlock, privacy toggles, and “Find in overworld” travel. See `overworld/ISOLATION.md`.
 
 **Quests** — 9 daily quests and 1 weekly co-op mission, streak multiplier, and a visible
 daily score cap that actually stops the score accruing.

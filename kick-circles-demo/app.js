@@ -500,13 +500,19 @@ function addReaction(msgId, emo) {
 }
 
 function sendMessage(text) {
-  chatData().push({ id: `me${Date.now()}`, author: 'SpookyBunny', mine: true, text, reacts: {} });
+  const dest = activeChat === 'mood' ? 'circle' : activeChat;
+  const list = dest === 'stream' ? CHAT_STREAM : CHAT_CIRCLE;
+  list.push({ id: `me${Date.now()}`, author: 'SpookyBunny', mine: true, text, reacts: {} });
   S.chatMessages += 1;
   if (text.includes('?')) S.questionsAsked += 1;
   save();
   checkStyleUnlocks();
-  if (activeChat === 'circle') bumpTask('chat');
-  renderChat();
+  if (dest === 'circle') {
+    bumpTask('chat');
+    applyMessageSignal(text, true);
+  }
+  if (activeChat !== 'mood') renderChat();
+  else renderMoodUI();
 }
 
 /* ─── LIVE EVENTS ──────────────────────────────────────── */
@@ -602,7 +608,13 @@ function eventPulse() {
 
 function bindEvent() {
   document.querySelectorAll('[data-poll]').forEach((b) => {
-    b.onclick = () => { if (S.pollVote !== null) return; S.pollVote = +b.dataset.poll; save(); bumpTask('poll'); renderEvent(); };
+    b.onclick = () => {
+      if (S.pollVote !== null) return;
+      S.pollVote = +b.dataset.poll; save(); bumpTask('poll');
+      pushAgentsToward('hype', 4, 0.35);
+      pushMoodEvent('hype', 'SpookyBunny', `voted ${POLL.options[S.pollVote].t}`, true);
+      renderEvent(); renderMoodUI();
+    };
   });
   document.querySelectorAll('[data-bet]').forEach((b) => {
     b.onclick = () => { S.prediction.bet = +b.dataset.bet; save(); renderEvent(); };
@@ -615,19 +627,31 @@ function bindEvent() {
     S.prediction.resolved = true; save();
     const won = S.prediction.side === 0;
     award(won ? S.prediction.bet * 2 : 0, won ? 'Prediction won' : 'Prediction lost');
-    renderEvent();
+    pushAgentsToward(won ? 'hype' : 'tilt', 5, 0.4);
+    renderEvent(); renderMoodUI();
   };
   document.querySelectorAll('[data-storm]').forEach((b) => {
     b.onclick = () => {
       S.stormTeam = b.dataset.storm;
       if (S.stormTeam === 'kekw') S.stormA += 14; else S.stormB += 14;
-      save(); bumpTask('storm'); renderEvent();
+      save(); bumpTask('storm');
+      pushAgentsToward('hype', 5, 0.45);
+      pushMoodEvent('hype', 'SpookyBunny', `joined ${S.stormTeam.toUpperCase()}`, true);
+      renderEvent(); renderMoodUI();
     };
   });
   const sb = $('spamBtn');
   if (sb) sb.onclick = () => {
     if (S.stormTeam === 'kekw') S.stormA += Math.ceil(Math.random() * 6); else S.stormB += Math.ceil(Math.random() * 6);
-    save(); renderEvent();
+    CHAT_CIRCLE.push({
+      id: `spam${Date.now()}`, author: 'SpookyBunny', mine: true,
+      text: S.stormTeam === 'kekw' ? 'KEKW' : 'HYPE', reacts: {},
+    });
+    pushAgentsToward('hype', 3, 0.5);
+    pushMoodEvent('hype', 'SpookyBunny', S.stormTeam === 'kekw' ? 'KEKW' : 'HYPE', true);
+    save();
+    if (activeChat !== 'mood') renderChat();
+    renderEvent(); renderMoodUI();
   };
   document.querySelectorAll('[data-quiz]').forEach((b) => {
     b.onclick = () => {
@@ -676,6 +700,8 @@ function renderCircles() {
       if (S.joined.includes(id)) return;
       S.joined.push(id); S.selected = id; save();
       award(50, `Joined ${CIRCLES.find((c) => c.id === id).name}`);
+      // Soft handoff into the world — never required for host state to stay consistent
+      try { OverworldBridge.travelToSelected(); } catch (err) { /* bridge optional */ }
     };
   });
 
@@ -1004,28 +1030,48 @@ const MOOD_LINES = {
 
 const REACT_MOOD = { '🔥': 'hype', '😂': 'hype', '👏': 'cozy', '👀': 'confused', '❓': 'confused', '💀': 'tilt' };
 
-/* Instruments push chat along the valence/arousal plane.
-   dv = valence change, da = arousal change. Effect scales with
-   intensity and shrinks as chat gets fatigued. */
-const INSTRUMENTS = [
-  { id: 'explain', ic: '💡', name: 'Explain it', dv: 0.85, da: -0.25, cost: 8,
-    when: 'confused', desc: 'clears confusion',
-    say: 'Streamer answered: Sony FX3, 16mm — pinned for everyone who asked.' },
-  { id: 'poll', ic: '🗳️', name: 'Run a poll', dv: 0.25, da: 0.8, cost: 14,
-    when: 'drift', desc: 'wakes a quiet chat',
-    say: 'Poll opened by the streamer: where should the crew go next?' },
-  { id: 'storm', ic: '🌪️', name: 'Emote Storm', dv: 0.4, da: 0.95, cost: 22,
-    when: 'hype', desc: 'amplifies energy',
-    say: 'Emote Storm triggered — chat, pick your side.' },
-  { id: 'cool', ic: '🧊', name: 'Cool it down', dv: 0.7, da: -0.85, cost: 10,
-    when: 'tilt', desc: 'defuses anger',
-    say: 'Streamer: fair call — let me explain what I was going for.' },
-  { id: 'shout', ic: '📣', name: 'Shout-out', dv: 0.95, da: 0.35, cost: 16,
-    when: 'cozy', desc: 'rewards the regulars',
-    say: 'Streamer shouted out tonight\u2019s regulars — you were one of them.' },
-  { id: 'ask', ic: '🎤', name: 'Ask chat', dv: 0.3, da: 0.5, cost: 9,
-    when: null, desc: 'pulls chat back in',
-    say: 'Streamer asked chat: what should we do for the last hour?' },
+/* Chat-native instruments — nothing here is a dashboard "tool".
+   Viewers move mood by typing in Circle. Streamers move mood by
+   dropping a cue into Circle that chat then swarms. */
+const MSG_SIGNALS = [
+  { mood: 'hype', re: /\b(kekw|lul|lol|lets?\s*go+|goated|insane|w\b|pog|🔥|😂)\b/i, push: 3 },
+  { mood: 'tilt', re: /\b(l\b|nah|unlucky|trash|💀|rip|what is he doing)\b/i, push: 3 },
+  { mood: 'confused', re: /(\?|wait what|huh|i don'?t get|what camera|explain)/i, push: 3 },
+  { mood: 'cozy', re: /\b(comfy|love this|good vibes|ty for|nice|💚)\b/i, push: 3 },
+  { mood: 'drift', re: /\b(zzz|anyone here|quiet|bored|afk|\.\.\.)\b/i, push: 2 },
+];
+
+const STREAMER_CUES = [
+  {
+    id: 'kekw', ic: '😂', label: 'spam KEKW',
+    cue: 'spam KEKW 😂',
+    mood: 'hype', storm: 'kekw',
+    swarm: ['KEKW', 'KEKW', '😂😂😂', 'KEKW', 'absolute cinema', 'KEKW KEKW', 'chat cooking'],
+  },
+  {
+    id: 'hype', ic: '🔥', label: 'go crazy',
+    cue: 'LETS GO chat — go crazy',
+    mood: 'hype', storm: 'hype',
+    swarm: ['LETS GOOO', '🔥🔥🔥', 'W streamer', 'GOATED', 'HYPE HYPE', 'no way'],
+  },
+  {
+    id: 'chill', ic: '🧊', label: 'everyone chill',
+    cue: 'chat chill for a sec',
+    mood: 'cozy',
+    swarm: ['ok chill', 'my bad', 'comfy again', 'good vibes', 'love this', 'ty for clarifying'],
+  },
+  {
+    id: 'ama', ic: '❓', label: 'ask me anything',
+    cue: 'AMA — drop your questions',
+    mood: 'confused',
+    swarm: ['what camera is he using?', 'where next?', 'wait what?', 'how long is the stream?', 'huh?', 'can someone explain'],
+  },
+  {
+    id: 'wake', ic: '🗳️', label: 'wake chat',
+    cue: 'chat woke? vote in the poll',
+    mood: 'hype', open: 'poll',
+    swarm: ['poll time', 'arcade', 'im voting', 'wake up chat', 'W', 'lets decide'],
+  },
 ];
 
 /* confused sits at the centre, so widen its catchment penalty or it
@@ -1042,13 +1088,11 @@ let moodShowLabels = true;
 let moodRAF = null;
 let lastMoodTick = 0;
 let lastDominant = null;
-let fatigue = 0;
-let intensity = 0.6;
+let lastCue = null;
 let lasso = null;
 let bigPad = 34;
 
 function seedAgents() {
-  fatigue = 0;
   const mix = { hype: 14, cozy: 12, tilt: 5, drift: 9, confused: 6 };
   const names = ['NightOwl', 'ClipLord', 'TokyoDrift', 'KEKWKing', 'PixelPam', 'neon_nova', 'orbitron',
     'speedrunner88', 'chatlurker', 'gg_enjoyer', 'MoonMile', 'CutKing', 'ReelRat', 'StreetCam'];
@@ -1173,8 +1217,6 @@ function stepMood(dt) {
     if (near.length >= 2) a.mood = near[Math.floor(Math.random() * near.length)].mood;
   }
 
-  fatigue = Math.max(0, fatigue - dt * 1.6);
-
   if (Math.random() < dt * 1.6) {
     const a = agents[Math.floor(Math.random() * agents.length)];
     const line = MOOD_LINES[a.mood][Math.floor(Math.random() * MOOD_LINES[a.mood].length)];
@@ -1210,47 +1252,125 @@ function moodMetrics() {
   };
 }
 
-/* one suggestion, ranked by severity — never two competing "do this now" */
-function suggestion(m) {
-  if (m.confusion >= 16) return 'explain';
-  if (m.dominant === 'tilt') return 'cool';
-  if (m.dominant === 'drift') return 'poll';
-  if (m.dominant === 'hype') return 'storm';
-  if (m.dominant === 'cozy') return 'shout';
-  return 'ask';
-}
-
 function targetAgents() {
   const s = agents.filter((a) => a.sel);
   return s.length ? s : agents;
 }
 
-function fireInstrument(id) {
-  const ins = INSTRUMENTS.find((x) => x.id === id);
-  if (!ins) return;
+function classifyMessage(text) {
+  for (const s of MSG_SIGNALS) {
+    if (s.re.test(text)) return s;
+  }
+  return null;
+}
 
-  const targets = targetAgents();
-  const damp = 1 - Math.min(0.8, fatigue / 100);
-  const k = intensity * damp;
-
-  targets.forEach((a) => {
-    a.x = Math.max(-1, Math.min(1, a.x + ins.dv * k * (0.65 + Math.random() * 0.7)));
-    a.y = Math.max(-1, Math.min(1, a.y + ins.da * k * (0.65 + Math.random() * 0.7)));
+/* push agents toward a mood — selection focuses the hit */
+function pushAgentsToward(mood, count, strength = 0.35) {
+  const M = MOODS[mood];
+  if (!M) return;
+  const pool = targetAgents();
+  const n = Math.min(count, pool.length);
+  for (let i = 0; i < n; i++) {
+    const a = pool[Math.floor(Math.random() * pool.length)];
+    a.x = Math.max(-1, Math.min(1, a.x + (M.v - a.x) * strength + (Math.random() - 0.5) * 0.12));
+    a.y = Math.max(-1, Math.min(1, a.y + (M.a - a.y) * strength + (Math.random() - 0.5) * 0.12));
     a.mood = moodAt(a.x, a.y);
+  }
+}
+
+function applyMessageSignal(text, mine = false) {
+  const hit = classifyMessage(text);
+  if (!hit) return null;
+  pushAgentsToward(hit.mood, hit.push, 0.4);
+  pushMoodEvent(hit.mood, mine ? 'SpookyBunny' : 'chat', text, mine);
+  clusterAgents();
+  renderMoodUI();
+  if (mine) toast('Mood shifted', `"${text.slice(0, 28)}" → ${MOODS[hit.mood].label}`, MOODS[hit.mood].ic);
+  return hit;
+}
+
+/* Streamer cue = a real message in Circle + a swarm of replies.
+   That swarm is the instrument — the map just reads it. */
+function dropStreamerCue(id) {
+  const cue = STREAMER_CUES.find((c) => c.id === id);
+  if (!cue) return;
+
+  CHAT_CIRCLE.push({
+    id: `cue${Date.now()}`,
+    author: 'Clavicular',
+    badge: 'stream',
+    badgeText: 'STREAMER',
+    color: '#53fc18',
+    text: cue.cue,
+    reacts: {},
   });
 
-  fatigue = Math.min(100, fatigue + ins.cost * intensity);
+  const names = ['NightOwl', 'ClipLord', 'TokyoDrift', 'KEKWKing', 'PixelPam', 'neon_nova', 'speedrunner88', 'MoonMile'];
+  cue.swarm.forEach((line, i) => {
+    setTimeout(() => {
+      CHAT_CIRCLE.push({
+        id: `sw${Date.now()}${i}`,
+        author: names[i % names.length],
+        color: '#c9d6dc',
+        text: line,
+        reacts: {},
+      });
+      pushAgentsToward(cue.mood, 4, 0.55);
+      pushMoodEvent(cue.mood, names[i % names.length], line);
+      if (activeChat !== 'mood') renderChat();
+      clusterAgents();
+      renderMoodUI();
+    }, 180 + i * 220);
+  });
 
-  const scope = targets.length === agents.length ? 'all of chat' : `${targets.length} chatters in the selected zone`;
-  CHAT_CIRCLE.push({ id: `sys${Date.now()}`, system: true, text: `⚡ ${ins.say}` });
-  pushMoodEvent(moodAt(0.4, 0.4), 'streamer', `${ins.name} → ${scope}`, true);
+  pushAgentsToward(cue.mood, 10, 0.65);
+  pushMoodEvent(cue.mood, 'Clavicular', cue.cue, false);
+  lastCue = { ...cue, at: Date.now() };
 
-  if (fatigue > 70) toast('Chat is getting numb', 'Overusing instruments dulls the response — ease off', '🥱');
-  else toast('Sent to chat', `${ins.name} · ${scope}`, ins.ic);
+  if (cue.storm) {
+    S.stormTeam = cue.storm;
+    if (cue.storm === 'kekw') S.stormA += 40; else S.stormB += 40;
+    activeEvent = 'storm';
+    document.querySelectorAll('.event-tab').forEach((x) => x.classList.toggle('active', x.dataset.event === 'storm'));
+  }
+  if (cue.open) {
+    activeEvent = cue.open;
+    document.querySelectorAll('.event-tab').forEach((x) => x.classList.toggle('active', x.dataset.event === cue.open));
+  }
 
-  clusterAgents();
+  save();
+  const focus = agents.filter((a) => a.sel).length;
+  toast('Cue dropped into Circle', focus
+    ? `${cue.label} · landing harder on ${focus} selected chatters`
+    : `${cue.label} · chat is swarming`, cue.ic);
+
+  if (activeChat === 'mood') {
+    activeChat = 'circle';
+    document.querySelectorAll('.chat-tab').forEach((x) => x.classList.toggle('active', x.dataset.chat === 'circle'));
+    applyChatMode();
+  }
   renderChat();
+  renderEvent();
+  clusterAgents();
   renderMoodUI();
+}
+
+function renderCueStrip() {
+  const html = STREAMER_CUES.map((c) =>
+    `<button class="cue-btn" data-cue="${c.id}" title="Drop into Circle chat">${c.ic} ${c.label}</button>`).join('');
+  if ($('cueBtns')) {
+    $('cueBtns').innerHTML = html;
+    $('cueBtns').querySelectorAll('[data-cue]').forEach((b) => {
+      b.onclick = () => dropStreamerCue(b.dataset.cue);
+    });
+  }
+  if ($('mmCues')) {
+    $('mmCues').innerHTML = STREAMER_CUES.map((c) =>
+      `<button class="cue-btn wide" data-cue-mm="${c.id}">${c.ic} ${c.label}</button>`).join('');
+    $('mmCues').querySelectorAll('[data-cue-mm]').forEach((b) => {
+      b.onclick = () => dropStreamerCue(b.dataset.cueMm);
+    });
+  }
 }
 
 /* convex hull — monotone chain */
@@ -1508,7 +1628,6 @@ function renderMoodUI() {
         <span class="mm-ev-t">${e.mine ? 'you' : 'now'}</span>
       </div>`).join('');
 
-    const sug = suggestion(m);
     const sel = m.selected;
 
     $('mmZones').innerHTML = zones.length
@@ -1520,26 +1639,24 @@ function renderMoodUI() {
       }).join('') + (sel ? '<button class="zone-chip clear" id="zoneClear">Clear selection</button>' : '')
       : '<span class="muted small">No zone has enough density right now — chat is scattered.</span>';
 
+    if ($('mmHow')) {
+      $('mmHow').innerHTML = `
+        <div class="how-row"><b>You type in Circle</b><span>KEKW · ??? · L · comfy → map moves</span></div>
+        <div class="how-row"><b>Streamer drops a cue</b><span>lands as a real message · chat swarms</span></div>
+        <div class="how-row"><b>Reactions &amp; storms</b><span>same signals, same map</span></div>`;
+    }
+
     $('mcTarget').innerHTML = sel
-      ? `<b>🎯 ${sel} chatters</b><small>tactical zone — only they are affected</small>`
-      : `<b>◎ All of chat</b><small>click a zone or drag on the map to target a group</small>`;
+      ? `<b>🎯 ${sel} chatters focused</b><small>your next message / cue lands harder on this zone</small>`
+      : `<b>◎ Whole Circle</b><small>select a zone to focus the next cue</small>`;
 
-    $('mcInstruments').innerHTML = INSTRUMENTS.map((ins) => `
-      <button class="mc-ins ${ins.id === sug ? 'hot' : ''}" data-ins="${ins.id}">
-        <span class="mc-ic">${ins.ic}</span>
-        <div><b>${ins.name}</b><small>${ins.id === sug ? 'suggested now' : ins.desc}</small></div>
-        <span class="mc-vec">${ins.dv > 0 ? '+' : ''}${ins.dv.toFixed(1)}v ${ins.da > 0 ? '+' : ''}${ins.da.toFixed(1)}a</span>
-      </button>`).join('');
+    if ($('mmLastCue')) {
+      $('mmLastCue').innerHTML = lastCue
+        ? `Last cue: <strong>${lastCue.ic} ${lastCue.label}</strong> — watch Circle chat and the map.`
+        : 'Try <strong>spam KEKW</strong> — it posts into Circle, chat replies, Hype grows.';
+    }
 
-    $('mcIntVal').textContent = `${Math.round(intensity * 100)}%`;
-    $('mcFatVal').textContent = `${Math.round(fatigue)}%`;
-    $('mcFatBar').style.width = `${fatigue}%`;
-    $('mcFatNote').textContent = fatigue > 70
-      ? 'Chat is numb — instruments barely land'
-      : fatigue > 35 ? 'Response is dulling, give it a rest' : 'Chat responds fully';
-    $('mcFatBar').classList.toggle('hot', fatigue > 70);
-
-    document.querySelectorAll('[data-ins]').forEach((b) => { b.onclick = () => fireInstrument(b.dataset.ins); });
+    renderCueStrip();
     document.querySelectorAll('[data-zone]').forEach((b) => { b.onclick = () => selectZone(+b.dataset.zone); });
     if ($('zoneClear')) $('zoneClear').onclick = clearSelection;
   }
@@ -1646,21 +1763,104 @@ function openStyle() {
 
 function applyChatMode() {
   const mood = activeChat === 'mood';
+  const circle = activeChat === 'circle';
   $('moodPane').classList.toggle('on', mood);
   $('chatBody').style.display = mood ? 'none' : '';
   document.querySelector('.live-event').style.display = mood ? 'none' : '';
+  if ($('cueStrip')) $('cueStrip').classList.toggle('on', circle);
   $('chatContext').textContent = mood
-    ? 'Live mood read of Circle chat · valence × arousal · updates every second'
-    : (activeChat === 'circle'
-      ? `Shared across 3 connected creators · ${S.privacy.slowMode ? 'slow mode' : 'open'} · Circle mods active`
+    ? 'Live mood read of Circle chat · moved by messages, cues, reactions'
+    : (circle
+      ? `Shared across 3 connected creators · ${S.privacy.slowMode ? 'slow mode' : 'open'} · type to move mood`
       : 'Clavicular channel chat · standard Kick chat');
 }
+
+/* ═══════════════════════════════════════════════════════════
+   OVERWORLD BRIDGE — host side
+   Only channel between host app and overworld/iframe.
+   Never import overworld symbols; never touch iframe DOM.
+   ═══════════════════════════════════════════════════════════ */
+const OverworldBridge = (() => {
+  const TARGET = 'kick-overworld';
+  let ready = false;
+  let lastHeart = null;
+
+  function frame() { return $('overworldFrame'); }
+
+  function ensureLoaded() {
+    const f = frame();
+    if (!f) return;
+    const src = f.dataset.src;
+    if (src && (!f.src || f.src === 'about:blank' || f.src.endsWith('about:blank'))) {
+      f.src = src;
+    }
+  }
+
+  function send(type, payload) {
+    const f = frame();
+    if (!f || !f.contentWindow) return;
+    try {
+      f.contentWindow.postMessage({ target: TARGET, type, payload: payload || null }, '*');
+    } catch (e) { /* sandboxed / not ready */ }
+  }
+
+  function onMessage(event) {
+    const msg = event.data;
+    if (!msg || msg.source !== 'kick-overworld') return;
+    if (msg.type === 'ready') {
+      ready = true;
+      send('focus');
+    }
+    if (msg.type === 'heartbeat' || msg.type === 'state') {
+      lastHeart = msg.payload;
+      const hint = $('owZoneHint');
+      if (hint && lastHeart && lastHeart.zone) {
+        hint.textContent = `Now in ${lastHeart.zone}` + (lastHeart.mode ? ` · ${lastHeart.mode} atlas` : '');
+      }
+    }
+    if (msg.type === 'error') {
+      console.warn('[overworld]', msg.payload && msg.payload.message);
+    }
+  }
+
+  function travelToSelected() {
+    const c = sel();
+    const channel = (c.creators && c.creators[0]) || null;
+    if (channel) send('focusStreamer', { channel });
+    else toast('Overworld', 'Walk to a pavilion — no creator pin for this Circle yet', '🗺');
+  }
+
+  function init() {
+    window.addEventListener('message', onMessage);
+    const dock = $('circlesDock');
+    const fab = $('dockToggle');
+    const close = $('dockClose');
+    if (fab) fab.onclick = () => dock.classList.toggle('open');
+    if (close) close.onclick = () => dock.classList.remove('open');
+    if ($('owTravelBtn')) $('owTravelBtn').onclick = () => {
+      dock.classList.remove('open');
+      travelToSelected();
+    };
+  }
+
+  return { ensureLoaded, send, init, travelToSelected, get isReady() { return ready; } };
+})();
 
 function switchView(v) {
   document.querySelectorAll('.view').forEach((x) => x.classList.remove('active'));
   $(`view-${v}`).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach((b) => b.classList.toggle('active', b.dataset.view === v));
   window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (v === 'circles') {
+    OverworldBridge.ensureLoaded();
+    OverworldBridge.send('focus');
+    // Open the My Circles dock once so the paradigm is visible beside the world
+    const dock = $('circlesDock');
+    if (dock && !dock.dataset.seen) { dock.classList.add('open'); dock.dataset.seen = '1'; }
+  } else {
+    OverworldBridge.send('blur');
+  }
 }
 
 function renderAll() {
@@ -1675,6 +1875,7 @@ function init() {
   seedAgents();
   renderClips();
   renderAll();
+  OverworldBridge.init();
 
   document.querySelectorAll('.nav-btn').forEach((b) => { b.onclick = () => switchView(b.dataset.view); });
   document.querySelectorAll('[data-goto]').forEach((b) => { b.onclick = () => switchView(b.dataset.goto); });
@@ -1701,10 +1902,8 @@ function init() {
   $('mmLabels').onclick = () => { moodShowLabels = !moodShowLabels; $('mmLabels').classList.toggle('on', moodShowLabels); };
   $('mmHulls').classList.add('on');
   $('mmLabels').classList.add('on');
-  $('mcIntensity').oninput = (e) => {
-    intensity = e.target.value / 100;
-    $('mcIntVal').textContent = `${e.target.value}%`;
-  };
+  renderCueStrip();
+  applyChatMode();
   document.querySelectorAll('.event-tab').forEach((b) => {
     b.onclick = () => {
       activeEvent = b.dataset.event;

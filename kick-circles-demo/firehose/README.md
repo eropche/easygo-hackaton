@@ -20,12 +20,13 @@ python3 serve.py          # preferred
 Live firehose resolves Kick chatrooms **in the browser** (`kick.com/api/v2/channels/…`),
 then subscribes to Pusher. A server proxy is optional fallback only.
 
-In Circles Overworld → enter a Top 5 hall → enable **Live firehose**.
-Each lane streams that creator’s Kick chat.
+## Top 5 halls (Overworld)
 
-## Optional: Wrangler
+Enter a Top 5 hall. The **Firehose bubbles** toggle switches display mode:
 
-```bash
-cd kick-circles-demo/firehose
-npx wrangler dev
-```
+| Toggle | Display | Data |
+|---|---|---|
+| **OFF** (default) | Plain linear chat per lane | Mock feed |
+| **ON** | Pit-style rising clouds; identical lines **merge** into ×N | Live Kick chat (mock clouds if quiet / failed) |
+
+The Pit (`public/`) is the reference for merge / rise behaviour.

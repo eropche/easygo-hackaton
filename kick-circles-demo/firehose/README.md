@@ -1,28 +1,31 @@
-# Firehose — The Pit
+# Firehose — The Pit + live client
 
-Teammate live-chat experiment: Kick chat as rising/merging bubbles + hype meter.
+Teammate Kick-chat experiment, compartmentalised under `kick-circles-demo/firehose/`.
 
-Lives under `kick-circles-demo/firehose/` (not wired into Circles Overworld yet).
+| Piece | Role |
+|---|---|
+| `live-client.js` | Shared Kick→Pusher client (no DOM). Used by Overworld Top 5 + The Pit |
+| `public/` | Standalone “The Pit” bubble UI |
+| `src/worker.js` | Cloudflare Worker proxy (optional deploy) |
+| `../serve.py` | **Local** static server + `/api/chatroom` / `/api/live` proxy |
 
-## Static preview (demo mode)
-
-From the demo folder:
+## Run locally
 
 ```bash
 cd kick-circles-demo
-python3 -m http.server 8080
-# → http://localhost:8080/firehose/public/
+python3 serve.py          # preferred
+# or: python3 -m http.server 8080
 ```
 
-Without the Worker proxy, Join falls back to simulated chat.
+Live firehose resolves Kick chatrooms **in the browser** (`kick.com/api/v2/channels/…`),
+then subscribes to Pusher. A server proxy is optional fallback only.
 
-## Live Kick chat (Worker)
+In Circles Overworld → enter a Top 5 hall → enable **Live firehose**.
+Each lane streams that creator’s Kick chat.
 
-Needs Cloudflare Wrangler for `/api/chatroom` + `/api/live` (CORS proxy):
+## Optional: Wrangler
 
 ```bash
 cd kick-circles-demo/firehose
 npx wrangler dev
 ```
-
-Then open the URL Wrangler prints (usually `http://localhost:8787`).

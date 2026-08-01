@@ -51,7 +51,7 @@ No build step, no dependencies, no API keys.
 
 ```bash
 cd kick-circles-demo
-python3 -m http.server 8080   # → http://localhost:8080
+python3 serve.py              # → http://localhost:8080  (includes Kick firehose API)
 ```
 
 State is per-browser in `localStorage`. The **↺** button in the header resets to the clean

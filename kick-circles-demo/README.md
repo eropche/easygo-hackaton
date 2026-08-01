@@ -14,12 +14,12 @@ Three pillars: **Belong** (detection, invites, score) · **Play** (quests, live 
 No build step, no dependencies. Either:
 
 ```bash
-# option 1 — just open it
-open index.html
-
-# option 2 — local server (recommended for the live demo)
-python3 -m http.server 8080
+# recommended — static files + Kick firehose API proxy
+python3 serve.py
 # → http://localhost:8080
+
+# fallback (no live Kick chat proxy)
+python3 -m http.server 8080
 ```
 
 ## Sharing it with the team
@@ -49,9 +49,9 @@ vice versa. The best of **My Circles** lives in a host-side dock over the world:
 Circle cards, affinity map, detection thresholds, Circle Score, weekly mission, collective
 unlock, privacy toggles, and “Find in overworld” travel. See `overworld/ISOLATION.md`.
 
-**Firehose (The Pit)** — teammate chat experiment under `firehose/` (bubble/merge UI + live
-Kick feed via Wrangler). Not wired into Overworld yet — static demo at
-`http://localhost:8080/firehose/public/`. See `firehose/README.md`.
+**Firehose** — `firehose/live-client.js` powers **Live firehose** inside Top 5 halls
+(per-lane Kick chat). Standalone Pit UI at `/firehose/public/`. Needs `python3 serve.py`
+so `/api/chatroom` can resolve Kick channels. See `firehose/README.md`.
 
 **Quests** — 9 daily quests and 1 weekly co-op mission, streak multiplier, and a visible
 daily score cap that actually stops the score accruing.

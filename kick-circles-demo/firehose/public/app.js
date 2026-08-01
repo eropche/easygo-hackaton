@@ -282,70 +282,41 @@ document.getElementById("feed-toggle").addEventListener("click", () => {
   }
 });
 
-/* ── live connection (Kick via Pusher) ──── */
-// One Pusher socket can carry many chatroom subscriptions.
-// roomSlugs maps "chatrooms.<id>.v2" → channel slug for tagging bubbles.
+/* ── live connection (Kick via shared firehose/live-client.js) ──── */
 async function connect(slugs) {
   if (typeof slugs === "string") slugs = [slugs];
-  disconnect();
   startDemo(); // keep the pit alive while chatrooms resolve
-  setStatus("off", `resolving ${slugs.length} channel${slugs.length > 1 ? "s" : ""}…`);
-
-  const results = await Promise.all(slugs.map(async (slug) => {
-    try {
-      const res = await fetch(`/api/chatroom?slug=${encodeURIComponent(slug)}`);
-      const data = await res.json();
-      if (!res.ok || !data.chatroomId) return null;
-      return { slug, chatroomId: data.chatroomId };
-    } catch { return null; }
-  }));
-  const rooms = results.filter(Boolean);
-
-  if (!rooms.length) {
-    setStatus("err", "couldn't reach any channel — demo mode");
-    startDemo();
+  if (!window.KickFirehose) {
+    setStatus("err", "live client missing — demo mode");
     return;
   }
-
-  const roomSlugs = new Map(rooms.map((r) => [`chatrooms.${r.chatroomId}.v2`, r.slug]));
-  const many = rooms.length > 1;
-
-  // Keep a local ref: handlers added here must go dead the moment a newer
-  // connect() replaces `ws`, or old sockets keep restarting the demo ticker
-  // (and closing the wrong socket) on top of the live feed.
-  const sock = new WebSocket(PUSHER_URL);
-  ws = sock;
-  sock.addEventListener("open", () => {
-    if (sock !== ws) return;
-    for (const name of roomSlugs.keys()) {
-      sock.send(JSON.stringify({ event: "pusher:subscribe", data: { auth: "", channel: name } }));
-    }
-    setStatus("live", many ? `live: top ${rooms.length} channels` : `live: ${rooms[0].slug}`);
-    stopDemo();
-  });
-  sock.addEventListener("message", (ev) => {
-    if (sock !== ws) return;
-    try {
-      const msg = JSON.parse(ev.data);
-      if (msg.event === "App\\Events\\ChatMessageEvent") {
-        const d = JSON.parse(msg.data);
-        const name = d.sender?.username || "?";
-        onMessage({
-          user: name,
-          color: d.sender?.identity?.color || colorFor(name),
-          content: d.content || "",
-          channel: roomSlugs.get(msg.channel) || null,
-        });
+  setStatus("off", `resolving ${slugs.length} channel${slugs.length > 1 ? "s" : ""}…`);
+  const result = await KickFirehose.connect(slugs, {
+    apiBase: "",
+    onStatus: (mode, text) => {
+      if (mode === "live") {
+        setStatus("live", text);
+        stopDemo();
+      } else if (mode === "connecting") {
+        setStatus("off", text);
+      } else {
+        setStatus("err", (text || "disconnected") + " — demo mode");
+        startDemo();
       }
-    } catch { /* ignore malformed frames */ }
+    },
+    onMessage: (msg) => {
+      onMessage({
+        user: msg.user,
+        color: msg.color || colorFor(msg.user || "?"),
+        content: msg.content || "",
+        channel: msg.channel || null,
+      });
+    },
   });
-  sock.addEventListener("close", () => {
-    if (sock !== ws) return;
-    ws = null;
-    if (statusText.textContent.startsWith("live")) setStatus("err", "disconnected — demo mode");
+  if (!result || !result.ok) {
+    setStatus("err", "couldn't reach any channel — demo mode");
     startDemo();
-  });
-  sock.addEventListener("error", () => sock.close());
+  }
 }
 
 async function connectTop() {
@@ -362,7 +333,8 @@ async function connectTop() {
 }
 
 function disconnect() {
-  if (ws) { const s = ws; ws = null; s.close(); }
+  if (window.KickFirehose) KickFirehose.disconnect();
+  ws = null;
 }
 
 /* ── demo mode ──────────────────────────── */

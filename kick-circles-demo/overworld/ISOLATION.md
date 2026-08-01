@@ -14,6 +14,8 @@ only inside `#overworldFrame`. Treat that folder as a **separate app**.
    the host dock (`#circlesDock`). The overworld can crash, reload, or be
    replaced without breaking Stream / Mood / Quests.
 5. Lazy-load: the iframe `src` stays `about:blank` until the Overworld tab opens.
+6. **Firehose exception:** Top 5 halls may load `../firehose/live-client.js` (Kick chat
+   client only — no Pit DOM). Live data still uses same-origin `/api/*` from `serve.py`.
 
 ## Message types
 

@@ -49,6 +49,10 @@ vice versa. The best of **My Circles** lives in a host-side dock over the world:
 Circle cards, affinity map, detection thresholds, Circle Score, weekly mission, collective
 unlock, privacy toggles, and “Find in overworld” travel. See `overworld/ISOLATION.md`.
 
+**Firehose (The Pit)** — teammate chat experiment under `firehose/` (bubble/merge UI + live
+Kick feed via Wrangler). Not wired into Overworld yet — static demo at
+`http://localhost:8080/firehose/public/`. See `firehose/README.md`.
+
 **Quests** — 9 daily quests and 1 weekly co-op mission, streak multiplier, and a visible
 daily score cap that actually stops the score accruing.
 

@@ -1873,9 +1873,7 @@ function switchView(v) {
   if (v === 'circles') {
     OverworldBridge.ensureLoaded();
     OverworldBridge.send('focus');
-    // Open the My Circles dock once so the paradigm is visible beside the world
-    const dock = $('circlesDock');
-    if (dock && !dock.dataset.seen) { dock.classList.add('open'); dock.dataset.seen = '1'; }
+    // My Circles dock stays closed until the user opens it via the FAB
   } else {
     OverworldBridge.send('blur');
   }

@@ -130,8 +130,9 @@
       <!-- CHAT RAIL -->
       <aside class="chat-rail">
         <div class="chat-tabs">
-          <button class="chat-tab" data-chat="stream">Stream chat</button>
-          <button class="chat-tab active" data-chat="circle">Circle chat <span class="new-tag">NEW</span></button>
+          <button class="chat-tab" data-chat="stream">Stream</button>
+          <button class="chat-tab active" data-chat="circle">Circle</button>
+          <button class="chat-tab" data-chat="mood">Mood <span class="new-tag">NEW</span></button>
         </div>
 
         <div class="chat-context" id="chatContext">
@@ -139,6 +140,21 @@
         </div>
 
         <div class="chat-body" id="chatBody"></div>
+
+        <!-- CHAT MOOD MAP (compact) -->
+        <div class="mood-pane" id="moodPane">
+          <div class="mood-top">
+            <div>
+              <div class="mood-now" id="moodNow">—</div>
+              <div class="mood-sub" id="moodSub"></div>
+            </div>
+            <div class="mood-index"><span id="moodIdx">0</span><small>MOOD INDEX</small></div>
+          </div>
+          <canvas class="mood-canvas" id="moodMini"></canvas>
+          <div class="mood-legend" id="moodLegendMini"></div>
+          <div class="mood-stats" id="moodStatsMini"></div>
+          <button class="primary-btn sm" id="moodExpand">Open full Mood Map</button>
+        </div>
 
         <!-- LIVE EVENT -->
         <div class="live-event">
@@ -401,6 +417,54 @@
       <button class="primary-btn" id="acceptInvite">Follow Circle</button>
       <button class="action-btn" id="declineInvite">Not now</button>
     </div>
+  </div>
+</div>
+
+<!-- ══════════════════ MOOD MAP MODAL ══════════════════ -->
+<div class="modal-backdrop" id="moodModal">
+  <div class="mood-modal">
+
+    <div class="mm-head">
+      <div class="mm-title">
+        <span class="mm-k">K</span>
+        <div>
+          <h2>Chat Mood Map <span class="new-tag">NEW</span></h2>
+          <p class="muted">demo_channel · 12,624 viewers · valence × arousal model</p>
+        </div>
+      </div>
+      <div class="mm-head-right">
+        <div class="mm-hype"><small>MOOD INDEX</small><span id="mmIdx">0</span></div>
+        <button class="action-btn" id="mmHulls">Zones</button>
+        <button class="action-btn" id="mmLabels">Labels</button>
+        <button class="action-btn" id="mmPause">Pause</button>
+        <button class="action-btn" id="mmClose">✕</button>
+      </div>
+    </div>
+
+    <div class="mm-canvas-wrap">
+      <canvas id="moodBig"></canvas>
+      <div class="mm-legend" id="moodLegendBig"></div>
+    </div>
+
+    <div class="mm-grid">
+      <div class="mm-panel">
+        <h3>Live signal</h3>
+        <div class="mm-stats" id="mmStats"></div>
+        <canvas id="moodSpark" class="mm-spark"></canvas>
+      </div>
+
+      <div class="mm-panel">
+        <h3>Event stream</h3>
+        <div class="mm-events" id="mmEvents"></div>
+      </div>
+
+      <div class="mm-panel mm-actions-panel">
+        <h3>Streamer response <span class="coop">closes the loop</span></h3>
+        <p class="muted small">The map spots it, one tap answers it, and chat sees the reply. This is the back-and-forth.</p>
+        <div class="mm-actions" id="mmActions"></div>
+      </div>
+    </div>
+
   </div>
 </div>
 

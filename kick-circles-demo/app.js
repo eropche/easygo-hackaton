@@ -424,12 +424,15 @@ function renderClips() {
     </div>`).join('');
 }
 
-const chatData = () => (activeChat === 'circle' ? CHAT_CIRCLE : CHAT_STREAM);
+const chatData = () => (activeChat === 'stream' ? CHAT_STREAM : CHAT_CIRCLE);
 
 function renderChat() {
-  $('chatContext').textContent = activeChat === 'circle'
-    ? `Shared across 3 connected creators · ${S.privacy.slowMode ? 'slow mode' : 'open'} · Circle mods active`
-    : 'Clavicular channel chat · standard Kick chat';
+  if (activeChat === 'mood') applyChatMode();
+  else {
+    $('chatContext').textContent = activeChat === 'circle'
+      ? `Shared across 3 connected creators · ${S.privacy.slowMode ? 'slow mode' : 'open'} · Circle mods active`
+      : 'Clavicular channel chat · standard Kick chat';
+  }
 
   $('chatBody').innerHTML = chatData().map((m) => {
     if (m.system) return `<div class="msg system">${m.text}</div>`;
@@ -484,6 +487,7 @@ function addReaction(msgId, emo) {
     S.msgReacts[msgId][emo] = (S.msgReacts[msgId][emo] || 0) + 1;
     S.reactionsGiven += 1;
     S.collective += 1;
+    if (REACT_MOOD[emo]) nudgeMood(REACT_MOOD[emo], 2, true);
     bumpTask('react');
   }
   document.querySelectorAll('.react-picker.open').forEach((o) => o.classList.remove('open'));
@@ -973,6 +977,364 @@ function openInvite() {
   };
 }
 
+/* ═══════════════════════════════════════════════════════
+   CHAT MOOD MAP
+   Chat is placed on the valence × arousal circumplex —
+   the standard model for describing emotion. X is negative
+   to positive, Y is calm to energised. That makes every
+   position mean something a streamer can act on.
+   ═══════════════════════════════════════════════════════ */
+
+const MOODS = {
+  hype: { label: 'Hype', ic: '🔥', color: '#53fc18', v: 0.62, a: 0.72, read: 'loud and loving it' },
+  cozy: { label: 'Cozy', ic: '💚', color: '#5eb7ff', v: 0.66, a: -0.6, read: 'calm and happy' },
+  tilt: { label: 'Tilt', ic: '💀', color: '#ff5c8a', v: -0.62, a: 0.66, read: 'loud and unhappy' },
+  drift: { label: 'Drifting', ic: '😐', color: '#8496a1', v: -0.42, a: -0.68, read: 'going quiet' },
+  confused: { label: 'Confused', ic: '❓', color: '#ffb020', v: -0.05, a: 0.08, read: 'lost the thread' },
+};
+const MOOD_KEYS = Object.keys(MOODS);
+
+const MOOD_LINES = {
+  hype: ['LETS GOOO', 'no way', 'W streamer', 'chat is cooking', 'GOATED', 'insane'],
+  cozy: ['this is nice', 'comfy stream', 'love this', 'good vibes', 'ty for stream'],
+  tilt: ['what is he doing', 'nah thats bad', 'unlucky', 'come on man', 'L'],
+  drift: ['zzz', 'anyone here', 'might head off', '...', 'quiet tonight'],
+  confused: ['wait what', 'what camera is he using?', 'i dont get it', 'huh?', 'can someone explain'],
+};
+
+const REACT_MOOD = { '🔥': 'hype', '😂': 'hype', '👏': 'cozy', '👀': 'confused', '❓': 'confused', '💀': 'tilt' };
+
+const MOOD_ACTIONS = [
+  { id: 'explain', when: 'confused', label: 'Answer the confusion', ic: '💡',
+    say: 'Streamer answered: it\u2019s a Sony FX3 with a 16mm — pinned for everyone who asked.', to: 'cozy' },
+  { id: 'poll', when: 'drift', label: 'Wake chat with a poll', ic: '🗳️',
+    say: 'Poll opened by the streamer: where should the crew go next?', to: 'hype' },
+  { id: 'storm', when: 'hype', label: 'Ride it — Emote Storm', ic: '🌪️',
+    say: 'Emote Storm triggered — chat, pick your side.', to: 'hype' },
+  { id: 'cool', when: 'tilt', label: 'Cool it down', ic: '🧊',
+    say: 'Streamer: fair call, let me explain what I was going for.', to: 'cozy' },
+  { id: 'shout', when: 'cozy', label: 'Shout out the regulars', ic: '📣',
+    say: 'Streamer shouted out tonight\u2019s regulars — you were one of them.', to: 'hype' },
+];
+
+let agents = [];
+let moodPaused = false;
+let moodEvents = [];
+let moodHistory = [];
+let moodShowHulls = true;
+let moodShowLabels = true;
+let moodRAF = null;
+let lastMoodTick = 0;
+let lastDominant = null;
+
+function seedAgents() {
+  const mix = { hype: 14, cozy: 12, tilt: 5, drift: 9, confused: 6 };
+  const names = ['NightOwl', 'ClipLord', 'TokyoDrift', 'KEKWKing', 'PixelPam', 'neon_nova', 'orbitron',
+    'speedrunner88', 'chatlurker', 'gg_enjoyer', 'MoonMile', 'CutKing', 'ReelRat', 'StreetCam'];
+  agents = [];
+  Object.entries(mix).forEach(([m, n]) => {
+    for (let i = 0; i < n; i++) {
+      const M = MOODS[m];
+      agents.push({
+        mood: m,
+        x: M.v + (Math.random() - 0.5) * 0.42,
+        y: M.a + (Math.random() - 0.5) * 0.42,
+        vx: 0, vy: 0,
+        r: 3 + Math.random() * 3,
+        ph: Math.random() * 6.28,
+        name: names[Math.floor(Math.random() * names.length)],
+      });
+    }
+  });
+}
+
+function pushMoodEvent(mood, name, text, mine = false) {
+  moodEvents.unshift({ mood, name, text, mine, t: Date.now() });
+  moodEvents = moodEvents.slice(0, 40);
+}
+
+function nudgeMood(mood, count = 2, mine = false) {
+  const M = MOODS[mood];
+  for (let i = 0; i < count; i++) {
+    const far = agents.filter((a) => a.mood !== mood);
+    const a = far.length ? far[Math.floor(Math.random() * far.length)] : agents[i];
+    if (!a) continue;
+    a.mood = mood;
+    a.vx += (M.v - a.x) * 0.09;
+    a.vy += (M.a - a.y) * 0.09;
+  }
+  const line = MOOD_LINES[mood][Math.floor(Math.random() * MOOD_LINES[mood].length)];
+  pushMoodEvent(mood, mine ? 'SpookyBunny' : agents[0].name, line, mine);
+}
+
+function stepMood(dt) {
+  agents.forEach((a) => {
+    const M = MOODS[a.mood];
+    a.vx += (M.v - a.x) * 0.4 * dt + (Math.random() - 0.5) * 0.5 * dt;
+    a.vy += (M.a - a.y) * 0.4 * dt + (Math.random() - 0.5) * 0.5 * dt;
+    a.vx *= 0.93; a.vy *= 0.93;
+    a.x = Math.max(-1, Math.min(1, a.x + a.vx * dt));
+    a.y = Math.max(-1, Math.min(1, a.y + a.vy * dt));
+    a.ph += dt * 2;
+  });
+
+  if (Math.random() < dt * 1.6) {
+    const a = agents[Math.floor(Math.random() * agents.length)];
+    const line = MOOD_LINES[a.mood][Math.floor(Math.random() * MOOD_LINES[a.mood].length)];
+    pushMoodEvent(a.mood, a.name, line);
+  }
+  if (Math.random() < dt * 0.28) {
+    nudgeMood(MOOD_KEYS[Math.floor(Math.random() * MOOD_KEYS.length)], 1);
+  }
+}
+
+function moodMetrics() {
+  const counts = {};
+  MOOD_KEYS.forEach((k) => { counts[k] = 0; });
+  agents.forEach((a) => { counts[a.mood] += 1; });
+
+  const dominant = MOOD_KEYS.reduce((b, k) => (counts[k] > counts[b] ? k : b), MOOD_KEYS[0]);
+  const n = agents.length;
+  const avgA = agents.reduce((s, a) => s + a.y, 0) / n;
+  const avgV = agents.reduce((s, a) => s + a.x, 0) / n;
+  const index = Math.round(((avgA + 1) / 2) * 60 + ((avgV + 1) / 2) * 40);
+
+  const sorted = MOOD_KEYS.slice().sort((a, b) => counts[b] - counts[a]);
+  const A = MOODS[sorted[0]]; const B = MOODS[sorted[1]];
+  const split = Math.round((Math.hypot(A.v - B.v, A.a - B.a) / 2.83) * (counts[sorted[1]] / n) * 260);
+
+  return {
+    counts, dominant, index,
+    confusion: Math.round((counts.confused / n) * 100),
+    split: Math.min(100, split),
+    rate: Math.round(46 + ((avgA + 1) / 2) * 90),
+    zones: MOOD_KEYS.filter((k) => counts[k] >= 4).length,
+  };
+}
+
+/* convex hull — monotone chain */
+function hull(pts) {
+  if (pts.length < 3) return [];
+  const p = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [];
+  for (const q of p) { while (lo.length >= 2 && cross(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+  const up = [];
+  for (let i = p.length - 1; i >= 0; i--) {
+    const q = p[i];
+    while (up.length >= 2 && cross(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop();
+    up.push(q);
+  }
+  lo.pop(); up.pop();
+  return lo.concat(up);
+}
+
+function drawMood(cv, big) {
+  if (!cv || !cv.clientWidth) return;
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth; const h = cv.clientHeight;
+  if (cv.width !== w * dpr) { cv.width = w * dpr; cv.height = h * dpr; }
+  const g = cv.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+
+  const pad = big ? 34 : 20;
+  const X = (v) => pad + ((v + 1) / 2) * (w - pad * 2);
+  const Y = (a) => h - pad - ((a + 1) / 2) * (h - pad * 2);
+
+  g.fillStyle = '#080a0b';
+  g.fillRect(0, 0, w, h);
+
+  const glow = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.max(w, h) * 0.5);
+  glow.addColorStop(0, 'rgba(83,252,24,.07)');
+  glow.addColorStop(1, 'transparent');
+  g.fillStyle = glow; g.fillRect(0, 0, w, h);
+
+  g.strokeStyle = 'rgba(255,255,255,.045)'; g.lineWidth = 1;
+  for (let i = 0; i <= 8; i++) {
+    const gx = pad + (i / 8) * (w - pad * 2); const gy = pad + (i / 8) * (h - pad * 2);
+    g.beginPath(); g.moveTo(gx, pad); g.lineTo(gx, h - pad); g.stroke();
+    g.beginPath(); g.moveTo(pad, gy); g.lineTo(w - pad, gy); g.stroke();
+  }
+  g.strokeStyle = 'rgba(255,255,255,.16)';
+  g.beginPath(); g.moveTo(X(0), pad); g.lineTo(X(0), h - pad); g.stroke();
+  g.beginPath(); g.moveTo(pad, Y(0)); g.lineTo(w - pad, Y(0)); g.stroke();
+
+  if (moodShowLabels) {
+    g.font = `700 ${big ? 10 : 8}px Inter, sans-serif`;
+    g.fillStyle = 'rgba(132,150,161,.75)';
+    g.textAlign = 'center';
+    g.fillText('ENERGISED', X(0), pad - 8);
+    g.fillText('CALM', X(0), h - pad + (big ? 18 : 13));
+    g.save(); g.translate(pad - 9, Y(0)); g.rotate(-Math.PI / 2);
+    g.fillText('NEGATIVE', 0, 0); g.restore();
+    g.save(); g.translate(w - pad + (big ? 11 : 9), Y(0)); g.rotate(Math.PI / 2);
+    g.fillText('POSITIVE', 0, 0); g.restore();
+
+    g.font = `800 ${big ? 12 : 9}px Inter, sans-serif`;
+    const q = [['TILT', -0.55, 0.78, '#ff5c8a'], ['HYPE', 0.55, 0.78, '#53fc18'],
+      ['DRIFTING', -0.55, -0.82, '#8496a1'], ['COZY', 0.55, -0.82, '#5eb7ff']];
+    q.forEach(([t, vx, vy, c]) => { g.fillStyle = `${c}44`; g.fillText(t, X(vx), Y(vy)); });
+  }
+
+  if (moodShowHulls) {
+    MOOD_KEYS.forEach((k) => {
+      const pts = agents.filter((a) => a.mood === k).map((a) => [X(a.x), Y(a.y)]);
+      if (pts.length < 4) return;
+      const hl = hull(pts);
+      if (hl.length < 3) return;
+      g.beginPath(); g.moveTo(hl[0][0], hl[0][1]);
+      hl.slice(1).forEach((p) => g.lineTo(p[0], p[1]));
+      g.closePath();
+      g.fillStyle = `${MOODS[k].color}14`; g.fill();
+      g.strokeStyle = `${MOODS[k].color}66`; g.lineWidth = 1.4; g.stroke();
+
+      if (moodShowLabels && big) {
+        const cxp = hl.reduce((s, p) => s + p[0], 0) / hl.length;
+        const cyp = hl.reduce((s, p) => s + p[1], 0) / hl.length;
+        const txt = `${MOODS[k].label.toUpperCase()} · ${pts.length}`;
+        g.font = '800 9px Inter, sans-serif'; g.textAlign = 'center';
+        const tw = g.measureText(txt).width + 12;
+        g.fillStyle = 'rgba(8,10,11,.88)';
+        g.fillRect(cxp - tw / 2, cyp - 8, tw, 16);
+        g.strokeStyle = `${MOODS[k].color}88`; g.lineWidth = 1;
+        g.strokeRect(cxp - tw / 2, cyp - 8, tw, 16);
+        g.fillStyle = MOODS[k].color; g.fillText(txt, cxp, cyp + 3);
+      }
+    });
+  }
+
+  agents.forEach((a) => {
+    const c = MOODS[a.mood].color;
+    const px = X(a.x); const py = Y(a.y);
+    const pulse = 1 + Math.sin(a.ph) * 0.16;
+    const rr = a.r * (big ? 1.5 : 1) * pulse;
+    const halo = g.createRadialGradient(px, py, 0, px, py, rr * 4);
+    halo.addColorStop(0, `${c}55`); halo.addColorStop(1, 'transparent');
+    g.fillStyle = halo;
+    g.beginPath(); g.arc(px, py, rr * 4, 0, 6.29); g.fill();
+    g.fillStyle = c;
+    g.beginPath(); g.arc(px, py, rr, 0, 6.29); g.fill();
+  });
+}
+
+function drawSpark() {
+  const cv = $('moodSpark');
+  if (!cv || !cv.clientWidth) return;
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth; const h = cv.clientHeight;
+  if (cv.width !== w * dpr) { cv.width = w * dpr; cv.height = h * dpr; }
+  const g = cv.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+  if (moodHistory.length < 2) return;
+  const max = 100;
+  g.beginPath();
+  moodHistory.forEach((v, i) => {
+    const x = (i / (moodHistory.length - 1)) * w;
+    const y = h - (v / max) * (h - 6) - 3;
+    i ? g.lineTo(x, y) : g.moveTo(x, y);
+  });
+  g.strokeStyle = '#53fc18'; g.lineWidth = 1.8; g.stroke();
+  g.lineTo(w, h); g.lineTo(0, h); g.closePath();
+  const f = g.createLinearGradient(0, 0, 0, h);
+  f.addColorStop(0, 'rgba(83,252,24,.28)'); f.addColorStop(1, 'transparent');
+  g.fillStyle = f; g.fill();
+}
+
+function legendHtml() {
+  return MOOD_KEYS.map((k) =>
+    `<span><i style="background:${MOODS[k].color}"></i>${MOODS[k].label}</span>`).join('');
+}
+
+function renderMoodUI() {
+  const m = moodMetrics();
+  const D = MOODS[m.dominant];
+
+  if ($('moodNow')) {
+    $('moodNow').innerHTML = `${D.ic} ${D.label.toUpperCase()}`;
+    $('moodNow').style.color = D.color;
+    $('moodSub').textContent = `${D.read} · ${m.counts[m.dominant]} of ${agents.length} chatters`;
+    $('moodIdx').textContent = m.index;
+    $('moodStatsMini').innerHTML = `
+      <div><b>${m.rate}</b><span>msg/min</span></div>
+      <div><b>${m.zones}</b><span>zones</span></div>
+      <div><b>${m.confusion}%</b><span>confused</span></div>
+      <div><b>${m.split}</b><span>split</span></div>`;
+  }
+
+  if ($('mmIdx')) {
+    $('mmIdx').textContent = m.index;
+    $('mmStats').innerHTML = `
+      <div class="mm-stat"><b>${m.rate}</b><span>messages / min</span></div>
+      <div class="mm-stat"><b>${D.ic} ${D.label}</b><span>dominant mood</span></div>
+      <div class="mm-stat ${m.confusion >= 18 ? 'warn' : ''}"><b>${m.confusion}%</b><span>confused</span></div>
+      <div class="mm-stat ${m.split >= 45 ? 'warn' : ''}"><b>${m.split}</b><span>split index</span></div>`;
+
+    $('mmEvents').innerHTML = moodEvents.slice(0, 14).map((e) => `
+      <div class="mm-ev ${e.mine ? 'mine' : ''}">
+        <span class="mm-ev-dot" style="background:${MOODS[e.mood].color}"></span>
+        <div><b>${e.name}</b><small>${e.text}</small></div>
+        <span class="mm-ev-t">${e.mine ? 'you' : 'now'}</span>
+      </div>`).join('');
+
+    $('mmActions').innerHTML = MOOD_ACTIONS.map((a) => {
+      const hot = a.when === m.dominant || (a.id === 'explain' && m.confusion >= 18);
+      return `<button class="mm-action ${hot ? 'hot' : ''}" data-mood-action="${a.id}">
+        <span class="mm-a-ic">${a.ic}</span>
+        <div><b>${a.label}</b><small>${hot ? 'suggested now' : `when chat is ${MOODS[a.when].label.toLowerCase()}`}</small></div>
+      </button>`;
+    }).join('');
+
+    document.querySelectorAll('[data-mood-action]').forEach((b) => {
+      b.onclick = () => runMoodAction(b.dataset.moodAction);
+    });
+  }
+
+  if (m.dominant !== lastDominant) {
+    if (lastDominant) toast('Chat mood shifted', `${MOODS[lastDominant].label} → ${D.label} · ${D.read}`, D.ic);
+    lastDominant = m.dominant;
+  }
+}
+
+function runMoodAction(id) {
+  const a = MOOD_ACTIONS.find((x) => x.id === id);
+  if (!a) return;
+  CHAT_CIRCLE.push({ id: `sys${Date.now()}`, system: true, text: `⚡ ${a.say}` });
+  nudgeMood(a.to, 7);
+  pushMoodEvent(a.to, 'streamer', a.say, true);
+  toast('Sent to chat', a.label, a.ic);
+  renderChat();
+  renderMoodUI();
+}
+
+function moodLoop(ts) {
+  const dt = Math.min(0.05, (ts - lastMoodTick) / 1000 || 0.016);
+  lastMoodTick = ts;
+  const miniOn = activeChat === 'mood';
+  const bigOn = $('moodModal').classList.contains('open');
+
+  if ((miniOn || bigOn) && !moodPaused) {
+    stepMood(dt);
+    if (!moodLoop.acc || ts - moodLoop.acc > 700) {
+      moodLoop.acc = ts;
+      moodHistory.push(moodMetrics().index);
+      if (moodHistory.length > 42) moodHistory.shift();
+      renderMoodUI();
+    }
+  }
+  if (miniOn) drawMood($('moodMini'), false);
+  if (bigOn) { drawMood($('moodBig'), true); drawSpark(); }
+
+  moodRAF = requestAnimationFrame(moodLoop);
+}
+
+function openMoodModal() {
+  $('moodModal').classList.add('open');
+  $('moodLegendBig').innerHTML = legendHtml();
+  renderMoodUI();
+}
+
 /* ─── CHAT STYLE PANEL ─────────────────────────────────── */
 
 function previewMsg(text) {
@@ -1037,6 +1399,18 @@ function openStyle() {
 
 /* ─── NAV & RENDER ─────────────────────────────────────── */
 
+function applyChatMode() {
+  const mood = activeChat === 'mood';
+  $('moodPane').classList.toggle('on', mood);
+  $('chatBody').style.display = mood ? 'none' : '';
+  document.querySelector('.live-event').style.display = mood ? 'none' : '';
+  $('chatContext').textContent = mood
+    ? 'Live mood read of Circle chat · valence × arousal · updates every second'
+    : (activeChat === 'circle'
+      ? `Shared across 3 connected creators · ${S.privacy.slowMode ? 'slow mode' : 'open'} · Circle mods active`
+      : 'Clavicular channel chat · standard Kick chat');
+}
+
 function switchView(v) {
   document.querySelectorAll('.view').forEach((x) => x.classList.remove('active'));
   $(`view-${v}`).classList.add('active');
@@ -1053,6 +1427,7 @@ function renderAll() {
 
 function init() {
   checkStyleUnlocks(true);
+  seedAgents();
   renderClips();
   renderAll();
 
@@ -1063,9 +1438,24 @@ function init() {
     b.onclick = () => {
       activeChat = b.dataset.chat;
       document.querySelectorAll('.chat-tab').forEach((x) => x.classList.toggle('active', x === b));
-      renderChat();
+      applyChatMode();
+      if (activeChat !== 'mood') renderChat();
     };
   });
+
+  $('moodLegendMini').innerHTML = legendHtml();
+  $('moodExpand').onclick = openMoodModal;
+  $('mmClose').onclick = () => $('moodModal').classList.remove('open');
+  $('moodModal').onclick = (e) => { if (e.target.id === 'moodModal') $('moodModal').classList.remove('open'); };
+  $('mmPause').onclick = () => {
+    moodPaused = !moodPaused;
+    $('mmPause').textContent = moodPaused ? 'Resume' : 'Pause';
+    $('mmPause').classList.toggle('on', moodPaused);
+  };
+  $('mmHulls').onclick = () => { moodShowHulls = !moodShowHulls; $('mmHulls').classList.toggle('on', moodShowHulls); };
+  $('mmLabels').onclick = () => { moodShowLabels = !moodShowLabels; $('mmLabels').classList.toggle('on', moodShowLabels); };
+  $('mmHulls').classList.add('on');
+  $('mmLabels').classList.add('on');
   document.querySelectorAll('.event-tab').forEach((b) => {
     b.onclick = () => {
       activeEvent = b.dataset.event;
@@ -1119,6 +1509,8 @@ function init() {
   const now = new Date(); const end = new Date(now); end.setHours(24, 0, 0, 0);
   const d = end - now;
   $('resetTimer').textContent = `${Math.floor(d / 36e5)}h ${Math.floor((d % 36e5) / 6e4)}m`;
+
+  moodRAF = requestAnimationFrame(moodLoop);
 
   if (!S.seenInvite) {
     S.seenInvite = true; save();

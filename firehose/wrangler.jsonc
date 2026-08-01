@@ -1,0 +1,8 @@
+{
+  "name": "hackathon",
+  "account_id": "",
+  "compatibility_date": "2025-06-01",
+  "main": "src/worker.js",
+  "assets": { "directory": "./public" },
+  "routes": []
+}

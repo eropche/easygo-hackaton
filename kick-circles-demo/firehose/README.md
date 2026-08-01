@@ -29,4 +29,8 @@ Enter a Top 5 hall. The **Firehose bubbles** toggle switches display mode:
 | **OFF** (default) | Plain linear chat per lane | Mock feed |
 | **ON** | Pit-style rising clouds; identical lines **merge** into ×N | Live Kick chat (mock clouds if quiet / failed) |
 
+Default **mix** assigns each lane a distinct chat class
+(`chaotic · chill · tactical · salty · electric · clutch · lore · scramble`).
+HUD pills force one class across all lanes.
+
 The Pit (`public/`) is the reference for merge / rise behaviour.

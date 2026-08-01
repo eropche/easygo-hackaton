@@ -1018,6 +1018,31 @@ const MOODS = {
   drift: { label: 'Drifting', ic: '😐', color: '#8496a1', v: -0.42, a: -0.68, read: 'going quiet' },
   confused: { label: 'Confused', ic: '❓', color: '#ffb020', v: -0.05, a: 0.08, read: 'lost the thread' },
 };
+
+/* Chat terrains — same heavy vocabulary as Top 5 firehose classes.
+   Pure pockets keep the punchy word; mixed / mid-map → Tactical. */
+const TERRAIN_NAMES = {
+  hype: ['Chaotic', 'Electric', 'Clutch', 'Roaring'],
+  cozy: ['Chill', 'Lore', 'Lounge', 'Soft Nest'],
+  tilt: ['Salty', 'Tilted', 'Rage Pocket', 'Toxic Spike'],
+  drift: ['Chill', 'Lull', 'Quiet Flat', 'AFK Meadow'],
+  confused: ['Scramble', 'Fog Bank', 'Lost Thread', 'Question Pit'],
+};
+function nameChatTerrain(dom, purity, cx, cy, used) {
+  const pool = TERRAIN_NAMES[dom] || ['Wild'];
+  let pick;
+  if (purity < 52 || (Math.abs(cx) < 0.22 && Math.abs(cy) < 0.22)) pick = 'Tactical';
+  else if (purity >= 78) pick = pool[0];
+  else if (cy > 0.35) pick = pool[Math.min(1, pool.length - 1)];
+  else if (cy < -0.35) pick = pool[Math.min(2, pool.length - 1)];
+  else pick = pool[Math.min(3, pool.length - 1)] || pool[0];
+  if (!used.has(pick)) { used.add(pick); return pick; }
+  for (const alt of pool) if (!used.has(alt)) { used.add(alt); return alt; }
+  let n = 2; let tagged = `${pick} ${n}`;
+  while (used.has(tagged)) { n += 1; tagged = `${pick} ${n}`; }
+  used.add(tagged);
+  return tagged;
+}
 const MOOD_KEYS = Object.keys(MOODS);
 
 const MOOD_LINES = {
@@ -1144,8 +1169,8 @@ function moodAt(x, y) {
   return best;
 }
 
-/* DBSCAN — zones emerge from where chatters actually are,
-   rather than being drawn around a label we assigned them */
+/* DBSCAN — chat terrains emerge from where chatters actually are,
+   then get vibe names (Chaotic, Chilling, Tactical…) */
 function clusterAgents(eps = 0.3, minPts = 3) {
   const n = agents.length;
   const labels = new Array(n).fill(-1);
@@ -1178,6 +1203,7 @@ function clusterAgents(eps = 0.3, minPts = 3) {
   agents.forEach((a, i) => { a.zone = labels[i]; });
 
   const out = [];
+  const usedNames = new Set();
   for (let c = 0; c < cid; c++) {
     const mem = agents.filter((a) => a.zone === c);
     if (!mem.length) continue;
@@ -1185,15 +1211,18 @@ function clusterAgents(eps = 0.3, minPts = 3) {
     MOOD_KEYS.forEach((k) => { counts[k] = 0; });
     mem.forEach((a) => { counts[a.mood] += 1; });
     const dom = MOOD_KEYS.reduce((b, k) => (counts[k] > counts[b] ? k : b), MOOD_KEYS[0]);
+    const purity = Math.round((counts[dom] / mem.length) * 100);
+    const cx = mem.reduce((s, a) => s + a.x, 0) / mem.length;
+    const cy = mem.reduce((s, a) => s + a.y, 0) / mem.length;
     out.push({
       id: c,
-      name: `ZONE ${String.fromCharCode(65 + c)}`,
+      name: nameChatTerrain(dom, purity, cx, cy, usedNames),
       members: mem,
       size: mem.length,
       dom,
-      purity: Math.round((counts[dom] / mem.length) * 100),
-      cx: mem.reduce((s, a) => s + a.x, 0) / mem.length,
-      cy: mem.reduce((s, a) => s + a.y, 0) / mem.length,
+      purity,
+      cx,
+      cy,
     });
   }
   zones = out.sort((a, b) => b.size - a.size);
@@ -1560,7 +1589,7 @@ function bindMoodCanvas() {
       const [bx, by] = canvasToVal(cv, Math.max(lasso.x0, lasso.x1), Math.min(lasso.y0, lasso.y1));
       agents.forEach((a) => { a.sel = a.x >= ax && a.x <= bx && a.y >= ay && a.y <= by; });
       const n = agents.filter((a) => a.sel).length;
-      toast('Tactical zone drawn', n ? `${n} chatters selected` : 'nobody in that region', '🎯');
+      toast('Tactical terrain drawn', n ? `${n} chatters selected` : 'nobody in that region', '🎯');
       renderMoodUI();
     }
     lasso = null;
@@ -1608,7 +1637,7 @@ function renderMoodUI() {
     $('moodIdx').textContent = m.index;
     $('moodStatsMini').innerHTML = `
       <div><b>${m.rate}</b><span>msg/min</span></div>
-      <div><b>${m.zones}</b><span>zones</span></div>
+      <div><b>${m.zones}</b><span>terrains</span></div>
       <div><b>${m.confusion}%</b><span>confused</span></div>
       <div><b>${m.split}</b><span>split</span></div>`;
   }
@@ -1637,7 +1666,7 @@ function renderMoodUI() {
             style="--zc:${MOODS[z.dom].color}">
             <b>${z.name}</b><span>${z.size} · ${z.purity}% ${MOODS[z.dom].label}</span></button>`;
       }).join('') + (sel ? '<button class="zone-chip clear" id="zoneClear">Clear selection</button>' : '')
-      : '<span class="muted small">No zone has enough density right now — chat is scattered.</span>';
+      : '<span class="muted small">No terrain has enough density right now — chat is scattered.</span>';
 
     if ($('mmHow')) {
       $('mmHow').innerHTML = `
@@ -1647,8 +1676,8 @@ function renderMoodUI() {
     }
 
     $('mcTarget').innerHTML = sel
-      ? `<b>🎯 ${sel} chatters focused</b><small>your next message / cue lands harder on this zone</small>`
-      : `<b>◎ Whole Circle</b><small>select a zone to focus the next cue</small>`;
+      ? `<b>🎯 ${sel} chatters focused</b><small>your next message / cue lands harder on this terrain</small>`
+      : `<b>◎ Whole Circle</b><small>select a terrain to focus the next cue</small>`;
 
     if ($('mmLastCue')) {
       $('mmLastCue').innerHTML = lastCue

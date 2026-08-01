@@ -14,11 +14,14 @@
 <header class="topbar">
   <div class="brand">
     <span class="kick-logo">KICK</span>
+    <span class="brand-divider"></span>
+    <span class="brand-sub">Circles</span>
   </div>
 
   <nav class="nav" id="mainNav">
-    <button class="nav-btn" data-view="circles">Circles Overworld</button>
     <button class="nav-btn active" data-view="stream">Stream</button>
+    <button class="nav-btn" data-view="creator">Creator <span class="new-tag">NEW</span></button>
+    <button class="nav-btn" data-view="circles">Overworld</button>
     <button class="nav-btn" data-view="quests">Quests</button>
     <button class="nav-btn" data-view="pass">Circle Pass</button>
     <button class="nav-btn" data-view="profile">Profile</button>
@@ -60,42 +63,37 @@
     <div class="stream-layout">
       <div class="stream-main">
 
-        <div class="player">
+        <div class="player" id="streamPlayer">
+          <div class="story-stage" id="storyStage">
+            <img class="story-scene on" data-act="1" src="assets/story/act1-fail.png" alt="" />
+            <img class="story-scene" data-act="2" src="assets/story/act2-encourage.png" alt="" />
+            <img class="story-scene" data-act="3" src="assets/story/act3-loved.png" alt="" />
+          </div>
           <div class="player-top">
             <span class="live-badge">● LIVE</span>
-            <span class="viewers">👁 12,481</span>
+            <span class="story-act-chip" id="storyAct">Ready</span>
+            <span class="viewers" id="storyViewers">👁 12,481</span>
           </div>
-          <div class="player-center">
-            <div class="play-icon">▶</div>
-            <p>Clavicular · IRL Tokyo night walk</p>
+          <div class="story-caption-bar">
+            <span id="storyCaption">Clavicular · IRL rooftop challenge (demo) — hit Play story</span>
           </div>
           <div class="player-bottom">
-            <span>2:14:07</span>
-            <div class="player-bar"><span></span></div>
-            <span>⚙ ⛶</span>
+            <span id="storyTimecode">0:00</span>
+            <div class="player-bar"><span id="storyProgress" style="width:0%"></span></div>
+            <span class="muted" style="font-size:.65rem">Audience view</span>
           </div>
         </div>
 
-        <!-- CIRCLE STRIP -->
-        <div class="circle-strip" id="circleStrip">
+        <!-- CIRCLE STRIP (compact) -->
+        <div class="circle-strip compact" id="circleStrip">
           <div class="strip-left">
             <span class="strip-orb"></span>
-            <div>
-              <div class="strip-title">
-                IRL Chaos Circle
-                <span class="new-tag">NEW</span>
-                <span class="peaking">● peaking · 3 creators live</span>
-              </div>
-              <div class="strip-sub">
-                Weekly mission <strong id="stripMission">72%</strong> ·
-                Your score <strong id="stripScore">1,740</strong> ·
-                Activation window closes in <strong>48m</strong>
-              </div>
-            </div>
+            <div class="strip-title">IRL Chaos <span class="peaking">● 3 live</span></div>
           </div>
           <div class="strip-right">
-            <div class="strip-progress"><span id="stripBar" style="width:72%"></span></div>
-            <button class="primary-btn sm" data-goto="circles">Open Circle</button>
+            <span class="strip-mini" id="stripMission">72%</span>
+            <span class="strip-mini" id="stripScore">1,740</span>
+            <button class="primary-btn sm" data-goto="circles">Circle</button>
           </div>
         </div>
 
@@ -104,38 +102,38 @@
             <div class="creator-avatar">🎥</div>
             <div>
               <h1>Clavicular</h1>
-              <p class="muted">IRL · 12.4K viewers · Also in your Circle: N3on, PlaceholderCreator1</p>
+              <p class="muted">IRL rooftop challenge · demo story</p>
             </div>
           </div>
           <div class="stream-actions">
             <button class="action-btn follow">♥ Follow</button>
             <button class="action-btn">★ Subscribe</button>
             <button class="action-btn" id="clipBtn">✂ Clip</button>
-            <button class="action-btn circle-action" data-goto="circles">◉ Circle <span class="new-tag">NEW</span></button>
+            <button class="action-btn circle-action" data-goto="circles">◉ Circle</button>
           </div>
-        </div>
-
-        <div class="clips-block">
-          <div class="block-head">
-            <h2>Trending in your Circle <span class="new-tag">NEW</span></h2>
-            <span class="muted">Ranked by Circle reactions, not view count</span>
-          </div>
-          <div class="clips-row" id="clipsRow"></div>
         </div>
 
       </div>
 
       <!-- CHAT RAIL -->
-      <aside class="chat-rail">
+      <aside class="chat-rail" id="chatRail">
+        <div class="mood-hint-chip" id="moodHintChip" aria-live="polite"></div>
         <div class="chat-tabs">
-          <button class="chat-tab" data-chat="stream">Stream</button>
-          <button class="chat-tab active" data-chat="circle">Circle</button>
-          <button class="chat-tab" data-chat="mood">Mood <span class="new-tag">NEW</span></button>
+          <button class="chat-tab active" data-chat="stream">Stream <span class="new-tag">LIVE</span></button>
+          <button class="chat-tab" data-chat="circle">Circle</button>
+          <button class="chat-tab" data-chat="mood">Mood</button>
         </div>
 
-        <div class="chat-context" id="chatContext">
-          Shared across 3 connected creators · slow mode · Circle mods active
+        <div class="chat-context-row">
+          <div class="chat-context" id="chatContext">
+            Living Room · tap a message to react · Quiet Validation + mood ambience
+          </div>
+          <button type="button" class="ambience-reset" id="ambienceReset" title="Reset ambience to neutral">↺</button>
         </div>
+        <div class="room-feel-whisper" id="roomFeelWhisper" hidden></div>
+
+        <div class="chat-pin validation-sticky" id="chatPin" hidden></div>
+        <div class="moment-board" id="momentBoard" hidden></div>
 
         <div class="chat-body" id="chatBody"></div>
 
@@ -154,37 +152,18 @@
           <button class="primary-btn sm" id="moodExpand">Open full Mood Map</button>
         </div>
 
-        <button class="instruments-toggle" id="instrumentsToggle" type="button" aria-expanded="true" title="Hide chat instruments">
-          <span class="inst-label">Instruments</span>
-          <span class="inst-state" id="instrumentsToggleState">Hide ▾</span>
-        </button>
+        <div class="chat-toolbar">
+          <button class="tool-btn" title="Channel Points">◆ 1,240</button>
+          <button class="tool-btn style-tool" id="styleBtn" title="Room Studio &amp; chat style">🏠 Room <span class="new-tag">NEW</span></button>
+          <button class="tool-btn circle-tool" data-goto="quests">◉ Circle</button>
+        </div>
 
-        <div class="chat-instruments" id="chatInstruments">
-          <!-- LIVE EVENT -->
-          <div class="live-event">
-            <div class="event-tabs" id="eventTabs">
-              <button class="event-tab active" data-event="poll">Poll</button>
-              <button class="event-tab" data-event="prediction">Prediction</button>
-              <button class="event-tab" data-event="storm">Storm</button>
-              <button class="event-tab" data-event="quiz">Quiz</button>
-              <button class="event-tab" data-event="pulse">Pulse</button>
-            </div>
-            <div class="event-body" id="eventBody"></div>
-          </div>
+        <div class="quick-react" id="quickReact" hidden></div>
 
-          <div class="chat-toolbar">
-            <button class="tool-btn" title="Channel Points">◆ 1,240</button>
-            <button class="tool-btn style-tool" id="styleBtn" title="Style your chat">🎨 Style <span class="new-tag">NEW</span></button>
-            <button class="tool-btn circle-tool" data-goto="quests">◉ Circle</button>
-          </div>
-
-          <div class="quick-react" id="quickReact"></div>
-
-          <!-- STREAMER CUES — land as real Circle messages -->
-          <div class="cue-strip" id="cueStrip">
-            <span class="cue-label">Streamer cue</span>
-            <div class="cue-btns" id="cueBtns"></div>
-          </div>
+        <!-- STREAMER CUES — land as real Circle messages -->
+        <div class="cue-strip" id="cueStrip">
+          <span class="cue-label">Streamer cue</span>
+          <div class="cue-btns" id="cueBtns"></div>
         </div>
 
         <form class="chat-input-row" id="chatForm">
@@ -192,6 +171,184 @@
           <button type="submit">Chat</button>
         </form>
       </aside>
+    </div>
+
+    <!-- Circle extras docked below — not the focus -->
+    <div class="stream-dock">
+      <div class="dock-panel dock-clips">
+        <div class="dock-mini-head">
+          <span>🔥 Clips</span>
+          <small>by reacts</small>
+        </div>
+        <div class="clips-row compact" id="clipsRow"></div>
+      </div>
+      <div class="dock-panel dock-events live-event">
+        <div class="event-tabs compact" id="eventTabs">
+          <button class="event-tab active" data-event="poll" title="Poll">🗳️</button>
+          <button class="event-tab" data-event="prediction" title="Predict">🎯</button>
+          <button class="event-tab" data-event="storm" title="Storm">😂</button>
+          <button class="event-tab" data-event="quiz" title="Quiz">🧠</button>
+          <button class="event-tab" data-event="pulse" title="Pulse">📊</button>
+        </div>
+        <div class="event-body compact" id="eventBody"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ CREATOR DASHBOARD (KICK STUDIO MOCK) ══════════════════ -->
+  <section class="view" id="view-creator">
+    <div class="creator-dash">
+      <aside class="cd-sidebar">
+        <div class="cd-logo">KICK</div>
+        <nav class="cd-nav">
+          <button class="cd-nav-item on" type="button" data-cd-panel="stream">
+            <span class="cd-ic">▶</span> Stream
+          </button>
+          <button class="cd-nav-item" type="button" disabled title="Demo stub">
+            <span class="cd-ic">🔑</span> Stream URL &amp; Key
+          </button>
+          <button class="cd-nav-item" type="button" disabled title="Demo stub">
+            <span class="cd-ic">$</span> Revenue
+          </button>
+          <button class="cd-nav-item" type="button" disabled title="Demo stub">
+            <span class="cd-ic">★</span> Achievements
+          </button>
+          <button class="cd-nav-item" type="button" disabled title="Demo stub">
+            <span class="cd-ic">▣</span> Studio
+          </button>
+          <button class="cd-nav-item" type="button" disabled title="Demo stub">
+            <span class="cd-ic">◔</span> Analytics
+          </button>
+          <button class="cd-nav-item" type="button" disabled title="Demo stub">
+            <span class="cd-ic">🛡</span> Moderation
+          </button>
+          <button class="cd-nav-item" type="button" disabled title="Demo stub">
+            <span class="cd-ic">◎</span> Community
+          </button>
+          <button class="cd-nav-item" type="button" disabled title="Demo stub">
+            <span class="cd-ic">🎁</span> Drops &amp; rewards
+          </button>
+        </nav>
+        <div class="cd-side-note">
+          <b>Creator tools</b>
+          <span>Mood Pulse · beat · story demo live here. Audience sees chat + room wash on Stream.</span>
+        </div>
+      </aside>
+
+      <div class="cd-main">
+        <header class="cd-top">
+          <div class="cd-search">Search</div>
+          <button type="button" class="cd-go-live" id="cdGoLive">Go live</button>
+        </header>
+
+        <div class="cd-session" id="cdSession">
+          <div class="cd-stat"><small>Session</small><b id="cdStatus">LIVE</b></div>
+          <div class="cd-stat"><small>Viewers</small><b id="cdViewers">12,481</b></div>
+          <div class="cd-stat"><small>Followers</small><b>84.2K</b></div>
+          <div class="cd-stat"><small>Sub Counts</small><b>1,204</b></div>
+          <div class="cd-stat"><small>Time Live</small><b id="cdTimeLive">2:14:07</b></div>
+        </div>
+
+        <div class="cd-grid">
+          <div class="cd-col-left">
+            <div class="cd-preview player" id="cdPreview">
+              <div class="story-stage" id="cdStoryStage">
+                <img class="story-scene on" data-act="1" src="assets/story/act1-fail.png" alt="" />
+                <img class="story-scene" data-act="2" src="assets/story/act2-encourage.png" alt="" />
+                <img class="story-scene" data-act="3" src="assets/story/act3-loved.png" alt="" />
+              </div>
+              <div class="player-top">
+                <span class="live-badge" id="cdLiveBadge">● LIVE</span>
+                <span class="story-act-chip" id="cdStoryAct">Ready</span>
+                <span class="viewers" id="cdPreviewViewers">👁 12,481</span>
+              </div>
+              <div class="story-caption-bar cd-caption">
+                <span id="cdStoryCaption">Creator preview · hit Play story to run Fail → Encourage</span>
+              </div>
+              <div class="player-bottom">
+                <span id="cdTimecode">0:00</span>
+                <div class="player-bar"><span id="cdProgress" style="width:0%"></span></div>
+                <button type="button" class="story-play-btn" id="storyDemoBtn">▶ Play story</button>
+              </div>
+            </div>
+
+            <div class="cd-split-cards">
+              <div class="cd-card">
+                <div class="cd-card-head">
+                  <h3>Activity Feed</h3>
+                  <span class="muted">live</span>
+                </div>
+                <div class="cd-feed" id="cdActivityFeed">
+                  <div class="cd-empty">Waiting for room signals…</div>
+                </div>
+              </div>
+              <div class="cd-card">
+                <div class="cd-card-head">
+                  <h3>Mod Actions</h3>
+                  <span class="muted">demo</span>
+                </div>
+                <div class="cd-feed" id="cdModFeed">
+                  <div class="cd-mod-row">Slow mode · on</div>
+                  <div class="cd-mod-row">Account-age gate · on</div>
+                  <div class="cd-mod-row">AI Chat Moderation · suggested</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cd-col-chat">
+            <div class="cd-card cd-chat-card">
+              <div class="cd-card-head">
+                <h3>Chat</h3>
+                <span class="new-tag">monitor</span>
+              </div>
+              <div class="cd-chat-body" id="cdChatBody"></div>
+              <div class="cd-chat-emotes" id="cdQuickReact" hidden></div>
+              <form class="cd-chat-input" id="cdChatForm">
+                <input type="text" id="cdChatInput" placeholder="Send a message as streamer…" maxlength="200" autocomplete="off" />
+                <button type="submit" class="cd-chat-send">Chat</button>
+              </form>
+            </div>
+          </div>
+
+          <div class="cd-col-right">
+            <div class="cd-card" id="moodPulseCard">
+              <!-- Mood Pulse rendered by JS — streamer-only insight -->
+            </div>
+
+            <div class="cd-card">
+              <div class="cd-card-head">
+                <h3>Stream Info</h3>
+                <button type="button" class="cd-icon-btn" title="Edit">✎</button>
+              </div>
+              <div class="cd-info-row"><small>Title</small><b>IRL rooftop challenge (demo)</b></div>
+              <div class="cd-info-row"><small>Category</small><b>IRL</b></div>
+              <div class="cd-info-row"><small>Language</small><b>English</b></div>
+            </div>
+
+            <div class="cd-card">
+              <div class="cd-card-head"><h3>Channel Actions</h3></div>
+              <div class="cd-toggles">
+                <label class="cd-toggle"><span>Subscribers only</span><input type="checkbox" /></label>
+                <label class="cd-toggle"><span>Emotes only</span><input type="checkbox" /></label>
+                <label class="cd-toggle"><span>Slow mode</span><input type="checkbox" checked /></label>
+                <label class="cd-toggle"><span>Banned words</span><input type="checkbox" checked /></label>
+                <label class="cd-toggle"><span>AI Chat Moderation</span><input type="checkbox" checked /></label>
+                <label class="cd-toggle"><span>Show view count</span><input type="checkbox" checked /></label>
+              </div>
+            </div>
+
+            <div class="cd-card cd-split-legend">
+              <div class="cd-card-head"><h3>Who sees what</h3></div>
+              <ul class="cd-legend">
+                <li><b>Audience (Stream)</b> — reactions, room wash, Room Studio, living chat</li>
+                <li><b>You (Creator)</b> — Mood Pulse, stream beat, gap alert, Play story, session</li>
+              </ul>
+              <button type="button" class="primary-btn sm" data-goto="stream" style="width:100%;margin-top:8px">Open audience Stream</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -510,9 +667,9 @@
 <div class="modal-backdrop" id="styleModal">
   <div class="modal style-modal">
     <div class="modal-orb"></div>
-    <span class="modal-kicker">CHAT IDENTITY</span>
-    <h2>Style your chat</h2>
-    <p class="muted">Every option is unlocked by <strong>how you show up in chat</strong> — messages, questions, reactions, clips. Nothing here is purchasable.</p>
+    <span class="modal-kicker">LIVING ROOM</span>
+    <h2>Room Studio</h2>
+    <p class="muted">Dress the chat space, then earn name flair from <strong>how you show up</strong> — messages, questions, reactions, clips. Nothing purchasable.</p>
 
     <div class="style-preview" id="stylePreview"></div>
     <div class="style-sections" id="styleSections"></div>

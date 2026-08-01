@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>KICK Circles — Team 1 Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="kick-logo">KICK</span>
+    <span class="brand-divider"></span>
+    <span class="brand-sub">Circles</span>
+  </div>
+
+  <nav class="nav" id="mainNav">
+    <button class="nav-btn active" data-view="stream">Stream</button>
+    <button class="nav-btn" data-view="circles">My Circles</button>
+    <button class="nav-btn" data-view="quests">Quests</button>
+    <button class="nav-btn" data-view="pass">Circle Pass</button>
+    <button class="nav-btn" data-view="profile">Profile</button>
+    <button class="nav-btn" data-view="ranks">Ranks</button>
+  </nav>
+
+  <div class="topbar-right">
+    <div class="level-chip">
+      <span class="lvl" id="hdrLevel">Lv.1</span>
+      <div class="lvl-bar"><span id="hdrLevelBar"></span></div>
+      <span class="xp" id="hdrXp">240 XP</span>
+    </div>
+
+    <div class="notif-wrap">
+      <button class="ghost-btn" id="bellBtn" title="Notifications">🔔<span class="bell-dot" id="bellDot">0</span></button>
+      <div class="notif-panel" id="notifPanel">
+        <div class="notif-head"><span>Notifications</span><button id="markRead">Mark all read</button></div>
+        <div class="notif-list" id="notifList"></div>
+      </div>
+    </div>
+
+    <div class="user-pill">
+      <div class="avatar-mini" id="hdrAvatar">🐰</div>
+      <div class="user-meta">
+        <span class="user-name">SpookyBunny</span>
+        <span class="user-role" id="hdrRole">Newcomer</span>
+      </div>
+    </div>
+    <button class="ghost-btn" id="resetBtn" title="Reset demo">↺</button>
+  </div>
+</header>
+
+<main class="content">
+
+  <!-- ══════════════════ STREAM (KICK UI MOCK) ══════════════════ -->
+  <section class="view active" id="view-stream">
+    <div class="kick-note">Mock of kick.com — Circle surfaces marked <span class="new-tag">NEW</span></div>
+
+    <div class="stream-layout">
+      <div class="stream-main">
+
+        <div class="player">
+          <div class="player-top">
+            <span class="live-badge">● LIVE</span>
+            <span class="viewers">👁 12,481</span>
+          </div>
+          <div class="player-center">
+            <div class="play-icon">▶</div>
+            <p>Clavicular · IRL Tokyo night walk</p>
+          </div>
+          <div class="player-bottom">
+            <span>2:14:07</span>
+            <div class="player-bar"><span></span></div>
+            <span>⚙ ⛶</span>
+          </div>
+        </div>
+
+        <!-- CIRCLE STRIP -->
+        <div class="circle-strip" id="circleStrip">
+          <div class="strip-left">
+            <span class="strip-orb"></span>
+            <div>
+              <div class="strip-title">
+                IRL Chaos Circle
+                <span class="new-tag">NEW</span>
+                <span class="peaking">● peaking · 3 creators live</span>
+              </div>
+              <div class="strip-sub">
+                Weekly mission <strong id="stripMission">72%</strong> ·
+                Your score <strong id="stripScore">1,740</strong> ·
+                Activation window closes in <strong>48m</strong>
+              </div>
+            </div>
+          </div>
+          <div class="strip-right">
+            <div class="strip-progress"><span id="stripBar" style="width:72%"></span></div>
+            <button class="primary-btn sm" data-goto="circles">Open Circle</button>
+          </div>
+        </div>
+
+        <div class="stream-meta">
+          <div class="creator">
+            <div class="creator-avatar">🎥</div>
+            <div>
+              <h1>Clavicular</h1>
+              <p class="muted">IRL · 12.4K viewers · Also in your Circle: N3on, PlaceholderCreator1</p>
+            </div>
+          </div>
+          <div class="stream-actions">
+            <button class="action-btn follow">♥ Follow</button>
+            <button class="action-btn">★ Subscribe</button>
+            <button class="action-btn" id="clipBtn">✂ Clip</button>
+            <button class="action-btn circle-action" data-goto="circles">◉ Circle <span class="new-tag">NEW</span></button>
+          </div>
+        </div>
+
+        <div class="clips-block">
+          <div class="block-head">
+            <h2>Trending in your Circle <span class="new-tag">NEW</span></h2>
+            <span class="muted">Ranked by Circle reactions, not view count</span>
+          </div>
+          <div class="clips-row" id="clipsRow"></div>
+        </div>
+
+      </div>
+
+      <!-- CHAT RAIL -->
+      <aside class="chat-rail">
+        <div class="chat-tabs">
+          <button class="chat-tab" data-chat="stream">Stream chat</button>
+          <button class="chat-tab active" data-chat="circle">Circle chat <span class="new-tag">NEW</span></button>
+        </div>
+
+        <div class="chat-context" id="chatContext">
+          Shared across 3 connected creators · slow mode · Circle mods active
+        </div>
+
+        <div class="chat-body" id="chatBody"></div>
+
+        <!-- LIVE EVENT -->
+        <div class="live-event">
+          <div class="event-tabs" id="eventTabs">
+            <button class="event-tab active" data-event="poll">Poll</button>
+            <button class="event-tab" data-event="prediction">Prediction</button>
+            <button class="event-tab" data-event="storm">Storm</button>
+            <button class="event-tab" data-event="quiz">Quiz</button>
+            <button class="event-tab" data-event="pulse">Pulse</button>
+          </div>
+          <div class="event-body" id="eventBody"></div>
+        </div>
+
+        <div class="chat-toolbar">
+          <button class="tool-btn" title="Channel Points">◆ 1,240</button>
+          <button class="tool-btn style-tool" id="styleBtn" title="Style your chat">🎨 Style <span class="new-tag">NEW</span></button>
+          <button class="tool-btn circle-tool" data-goto="quests">◉ Circle</button>
+        </div>
+
+        <div class="quick-react" id="quickReact"></div>
+
+        <form class="chat-input-row" id="chatForm">
+          <input id="chatInput" type="text" placeholder="Send a message…" maxlength="200" autocomplete="off" />
+          <button type="submit">Chat</button>
+        </form>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ══════════════════ MY CIRCLES ══════════════════ -->
+  <section class="view" id="view-circles">
+    <div class="page-head">
+      <div>
+        <h1>My Circles</h1>
+        <p class="muted">Communities formed from what you already watch. Membership is private by default.</p>
+      </div>
+      <button class="primary-btn sm" id="openInviteBtn">View pending invitation</button>
+    </div>
+
+    <div class="circle-cards" id="circleCards"></div>
+
+    <!-- SELECTED CIRCLE DETAIL -->
+    <div class="detail-head" id="detailHead"></div>
+
+    <div class="split-2">
+      <div class="panel">
+        <div class="block-head"><h2>Circle Map</h2><span class="muted">Every edge is explainable</span></div>
+        <div class="map-wrap" id="mapWrap"></div>
+        <div class="map-legend">
+          <span><i class="dot you"></i> You</span>
+          <span><i class="dot creator"></i> Creator you watch</span>
+          <span><i class="dot linked"></i> Connected creator</span>
+          <span><i class="dot circle"></i> Circle</span>
+        </div>
+
+        <div class="detect-block">
+          <h3>How this Circle was detected</h3>
+          <div class="detect-grid" id="detectGrid"></div>
+          <div class="formula">
+            <code id="detectRule"></code>
+            <span class="muted">Clusters below the activity floor never launch. Existing Circles below it are merged or archived.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="block-head"><h2>Why you belong</h2><span class="muted">every invite states its reason</span></div>
+        <ul class="reason-list" id="reasonList"></ul>
+
+        <div class="score-block">
+          <h3>Circle Score breakdown</h3>
+          <div class="score-bars" id="scoreBars"></div>
+          <div class="formula">
+            <code>Score = 0.30·Consistency + 0.25·Participation + 0.25·Contribution + 0.20·Discovery</code>
+            <span class="muted">28-day rolling · 200/day cap · linear decay</span>
+          </div>
+        </div>
+
+        <div class="mission-block">
+          <h3>Weekly Circle mission <span class="coop">co-op</span></h3>
+          <p class="muted" id="missionDesc"></p>
+          <div class="mission-bar"><span id="missionBar"></span></div>
+          <div class="mission-meta"><span id="missionCount"></span><span id="missionMembers"></span></div>
+        </div>
+
+        <div class="unlock-block">
+          <h3>Collective unlock <span class="coop">whole Circle</span></h3>
+          <p class="muted">Every reaction from every member counts toward a custom Circle emote.</p>
+          <div class="mission-bar"><span id="collectiveBar"></span></div>
+          <div class="mission-meta"><span id="collectiveCount"></span><span>unlocks 🌪️ CHAOS emote</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel safety-panel">
+      <div class="block-head">
+        <h2>Privacy &amp; safety</h2>
+        <span class="muted">Safety is a product surface, not a policy page</span>
+      </div>
+      <div class="safety-grid">
+        <label class="toggle-row">
+          <div><b>Hide my membership</b><small>Nobody can see which Circles you're in</small></div>
+          <input type="checkbox" class="sw" data-priv="hideMembership" checked />
+        </label>
+        <label class="toggle-row">
+          <div><b>Appear on leaderboard</b><small>Your score is private until you opt in</small></div>
+          <input type="checkbox" class="sw" data-priv="showLeaderboard" />
+        </label>
+        <label class="toggle-row">
+          <div><b>Circle chat slow mode</b><small>One message every 30 seconds</small></div>
+          <input type="checkbox" class="sw" data-priv="slowMode" checked />
+        </label>
+        <label class="toggle-row">
+          <div><b>Account-age gate</b><small>New accounts can read but not post for 24h</small></div>
+          <input type="checkbox" class="sw" data-priv="ageGate" checked />
+        </label>
+      </div>
+      <div class="safety-actions">
+        <button class="action-btn">⚑ Report a member</button>
+        <button class="action-btn">📄 Circle rules</button>
+        <button class="action-btn danger" id="leaveBtn">Leave Circle</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ QUESTS ══════════════════ -->
+  <section class="view" id="view-quests">
+    <div class="page-head">
+      <div>
+        <h1>Quests</h1>
+        <p class="muted">Resets in <span id="resetTimer">—</span> · contribution is weighted, volume alone earns nothing</p>
+      </div>
+      <div class="head-boxes">
+        <div class="streak-box">
+          <span class="streak-num" id="streakNum">3</span>
+          <span>day streak</span>
+          <span class="streak-mult" id="streakMult">1.3× multiplier</span>
+        </div>
+        <div class="cap-box">
+          <div class="cap-label">Daily score cap <span id="capText">0 / 200</span></div>
+          <div class="cap-bar"><span id="capBar"></span></div>
+          <div class="cap-note" id="capNote">Anti-grind: score stops accruing at the cap</div>
+        </div>
+      </div>
+    </div>
+    <div class="task-grid" id="taskGrid"></div>
+  </section>
+
+  <!-- ══════════════════ CIRCLE PASS ══════════════════ -->
+  <section class="view" id="view-pass">
+    <div class="page-head">
+      <div>
+        <h1>Circle Pass · Season 04</h1>
+        <p class="muted">28-day season · free track only · nothing here is purchasable with Kicks</p>
+      </div>
+      <div class="season-box">
+        <span class="season-num">12d</span>
+        <span>remaining</span>
+      </div>
+    </div>
+    <div class="pass-progress">
+      <div class="pass-bar"><span id="passBar"></span></div>
+      <span id="passLabel">Tier 1 of 7</span>
+    </div>
+    <div class="pass-track" id="passTrack"></div>
+  </section>
+
+  <!-- ══════════════════ PROFILE ══════════════════ -->
+  <section class="view" id="view-profile">
+    <div class="profile-layout">
+      <div class="myspace panel">
+        <div class="myspace-banner" id="msBanner"></div>
+        <div class="myspace-top">
+          <div class="pfp-wrap">
+            <div class="pfp-frame" id="pfpFrame"></div>
+            <div class="pfp" id="pfpAvatar">🐰</div>
+          </div>
+          <div class="pfp-info">
+            <h1>SpookyBunny</h1>
+            <p class="pfp-title" id="pfpTitle">IRL Chaos Member</p>
+            <p class="muted">Season 04 · Circle rank <span id="pfpRank">#3</span> · member 34 days</p>
+            <div class="pill-row" id="pfpBadges"></div>
+          </div>
+        </div>
+
+        <div class="ms-section">
+          <h3>About me</h3>
+          <p class="about">Chaos enjoyer. Clip hunter. Always in the Circle when three creators go live at once.</p>
+        </div>
+
+        <div class="ms-section">
+          <h3>Collectibles shelf <span class="muted">— earned only inside Circles</span></h3>
+          <div class="shelf-grid" id="shelfGrid"></div>
+        </div>
+
+        <div class="ms-section">
+          <h3>Achievements</h3>
+          <div class="ach-grid" id="achGrid"></div>
+        </div>
+
+        <div class="ms-section">
+          <h3>Weekly recap <span class="muted">— sent every Monday, drives the return visit</span></h3>
+          <div class="recap" id="recapBox"></div>
+        </div>
+      </div>
+
+      <aside class="panel customize">
+        <h2>Customise</h2>
+        <p class="muted small">Unlocked by participation. Never by Kicks.</p>
+        <h3>Avatar</h3><div class="picker" id="pickAvatar"></div>
+        <h3>Frame</h3><div class="picker" id="pickFrame"></div>
+        <h3>Title</h3><div class="picker col" id="pickTitle"></div>
+        <h3>Chat colour</h3><div class="picker colors" id="pickColor"></div>
+        <div class="unlock-note" id="unlockNote"></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ══════════════════ RANKS ══════════════════ -->
+  <section class="view" id="view-ranks">
+    <div class="page-head">
+      <div>
+        <h1>Roles &amp; Ranks</h1>
+        <p class="muted">Roles are permanent. Ranks reset every season — so everyone has a reason to return on day one.</p>
+      </div>
+    </div>
+
+    <div class="split-2">
+      <div class="panel">
+        <div class="block-head"><h2>Your role path <span class="muted">permanent</span></h2></div>
+        <div class="role-path" id="rolePath"></div>
+      </div>
+      <div class="panel">
+        <div class="block-head"><h2>Season leaderboard</h2><span class="muted">opt-in only</span></div>
+        <table class="leaderboard" id="leaderboard"></table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="block-head"><h2>Season ranks <span class="muted">reset in 12 days</span></h2></div>
+      <div class="tier-track" id="tierTrack"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ══════════════════ INVITATION MODAL ══════════════════ -->
+<div class="modal-backdrop" id="inviteModal">
+  <div class="modal">
+    <div class="modal-orb"></div>
+    <span class="modal-kicker">PRIVATE INVITATION</span>
+    <h2 id="inviteTitle">You've found your people.</h2>
+    <p class="muted" id="inviteDesc"></p>
+    <div class="invite-reasons" id="inviteReasons"></div>
+    <div class="invite-note">
+      Only you can see this. Nobody knows you were invited unless you join,
+      and your membership stays private afterwards.
+    </div>
+    <div class="modal-actions">
+      <button class="primary-btn" id="acceptInvite">Follow Circle</button>
+      <button class="action-btn" id="declineInvite">Not now</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ CHAT STYLE MODAL ══════════════════ -->
+<div class="modal-backdrop" id="styleModal">
+  <div class="modal style-modal">
+    <div class="modal-orb"></div>
+    <span class="modal-kicker">CHAT IDENTITY</span>
+    <h2>Style your chat</h2>
+    <p class="muted">Every option is unlocked by <strong>how you show up in chat</strong> — messages, questions, reactions, clips. Nothing here is purchasable.</p>
+
+    <div class="style-preview" id="stylePreview"></div>
+    <div class="style-sections" id="styleSections"></div>
+
+    <div class="identity-note" id="identityNote"></div>
+
+    <div class="modal-actions">
+      <button class="primary-btn" id="styleDone">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-stack" id="toastStack"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

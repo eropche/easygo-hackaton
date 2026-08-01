@@ -9,29 +9,42 @@ Today's focus is **Chat Insights / Engagement** as a living room — not Circles
 
 **One-liner:** Dress the chat room; read people mood + stream mood; hint lighting so everyone feels the moment.
 
+## Primary surface: Stream tab
+
+- **Stream** is the default active chat tab and the Living Room home.
+- Put Living Room product work on Stream / `CHAT_STREAM` via `livingRoomChat()`:
+  - Quiet Validation sticky + moment board
+  - Dense Kick-like story chat + tap-to-react
+  - roomMood wash, mood hints, Room Studio themes
+- **Circle** tab = Circles scaffolding (shared multi-creator chat) — leave intact, not the pitch.
+- **Mood** tab = Mood Map depth only — do not expand for P0; do not hide Living Room features only there.
+
 ## Moment model
 
 - `roomMood` ← reactions in last 60s (people)
 - `streamMood` ← beat simulator + manual Set beat (show)
-- Shared wash follows `roomMood`; hints suggest palette from `streamMood`
+- Shared wash follows `roomMood`; hints suggest palette (roomMood + streamMood)
 - Follow mode default ON; hint ≠ hijack when Follow OFF
+- Click mood hint Accept → apply `S.roomTheme` to `.chat-rail`
 
 ## P0 features (priority)
 
-1. **Reactions** — evolve `REACTIONS` / `addReaction` + `onReactionChange`
-2. **Room mood + shared wash** — `reactionWindow` → CSS on `.chat-rail`
-3. **Room Studio** — extend Style into tint / accent / glow (`roomTheme`)
-4. **Dynamic mood hints** — beat change → Accept / auto-Follow
-5. **Mood Pulse** — roomMood + streamMood + top reacts (one aggregate)
+1. **Reactions** — tap message emoji tray → `addReaction` + `onReactionChange`
+2. **Room mood + shared wash** — `reactionWindow` → CSS on `.chat-rail` (slow ambience)
+3. **Room Studio** — tint / accent / glow / wallpaper (`roomTheme`)
+4. **Dynamic mood hints** — roomMood nudge + stream beat → Accept / auto-Follow
+5. **Quiet Validation sticky** — affirming line pinned on Stream with scene reacts
+6. **Mood Pulse** — roomMood + streamMood + top reacts (Creator glance)
 
 Voice is **P1**. Do not expand Mood Map for P0.
 
 ## Non-negotiables
 
 - Lurker test on every feature
-- Chat is the room; Pulse is the one streamer glance surface
+- Stream chat is the room; Pulse is the one streamer glance surface
 - Dummy data + simulated beats over live Kick API / CV ML
 - Evolve `kick-circles-demo/`; keep ↺ reset demo-safe
+- Story demo injects into Stream (`CHAT_STREAM`), not Circle
 
 Pitch words: living room · this moment · people + show · hint ≠ hijack · wrap-around
 

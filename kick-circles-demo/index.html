@@ -119,16 +119,21 @@
       <aside class="chat-rail" id="chatRail">
         <div class="mood-hint-chip" id="moodHintChip" aria-live="polite"></div>
         <div class="chat-tabs">
-          <button class="chat-tab" data-chat="stream">Stream</button>
-          <button class="chat-tab active" data-chat="circle">Circle</button>
-          <button class="chat-tab" data-chat="mood">Mood <span class="new-tag">NEW</span></button>
+          <button class="chat-tab active" data-chat="stream">Stream <span class="new-tag">LIVE</span></button>
+          <button class="chat-tab" data-chat="circle">Circle</button>
+          <button class="chat-tab" data-chat="mood">Mood</button>
         </div>
 
-        <div class="chat-context" id="chatContext">
-          Shared across 3 connected creators · slow mode · Circle mods active
+        <div class="chat-context-row">
+          <div class="chat-context" id="chatContext">
+            Living Room · tap a message to react · Quiet Validation + mood ambience
+          </div>
+          <button type="button" class="ambience-reset" id="ambienceReset" title="Reset ambience to neutral">↺</button>
         </div>
+        <div class="room-feel-whisper" id="roomFeelWhisper" hidden></div>
 
-        <div class="chat-pin" id="chatPin" hidden></div>
+        <div class="chat-pin validation-sticky" id="chatPin" hidden></div>
+        <div class="moment-board" id="momentBoard" hidden></div>
 
         <div class="chat-body" id="chatBody"></div>
 
@@ -153,7 +158,7 @@
           <button class="tool-btn circle-tool" data-goto="quests">◉ Circle</button>
         </div>
 
-        <div class="quick-react" id="quickReact"></div>
+        <div class="quick-react" id="quickReact" hidden></div>
 
         <!-- STREAMER CUES — land as real Circle messages -->
         <div class="cue-strip" id="cueStrip">
@@ -298,7 +303,7 @@
                 <span class="new-tag">monitor</span>
               </div>
               <div class="cd-chat-body" id="cdChatBody"></div>
-              <div class="cd-chat-emotes" id="cdQuickReact"></div>
+              <div class="cd-chat-emotes" id="cdQuickReact" hidden></div>
               <form class="cd-chat-input" id="cdChatForm">
                 <input type="text" id="cdChatInput" placeholder="Send a message as streamer…" maxlength="200" autocomplete="off" />
                 <button type="submit" class="cd-chat-send">Chat</button>

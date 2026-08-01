@@ -5,7 +5,19 @@
 
 const KEY = 'kickCircles.v4';
 
-const REACTIONS = ['😂', '🔥', '💀', '👀', '❓', '👏'];
+const REACTIONS = ['😂', '🔥', '💀', '👀', '❓', '👏', '💙', '🫂', '🥺', '😢', '💔', '🫶', '💧', '😔', '🤍', '🙏', '✨', '💪', '😌', '🌸', '☀️', '🎉', '💯', '🚀', '😭', '⚡'];
+const SCENE_EMOJIS = {
+  tense: ['💙', '🫂', '🥺', '😢', '💔', '🫶', '💧', '😔', '🤍', '🙏'],
+  cozy: ['🫶', '💙', '✨', '🤍', '🙏', '💪', '😌', '🌸', '☀️', '🫂'],
+  hype: ['🔥', '😂', '👏', '💀', '👀', '🎉', '💯', '🚀', '😭', '⚡'],
+  chill: ['👀', '💙', '✨', '😌', '🌙', '🤍', '👏', '🔥', '💧', '🙏'],
+};
+/** Seed counts for Quiet Validation sticky by stream beat */
+const STICKY_SEED = {
+  tense: { '💙': 12, '🫂': 8, '🥺': 6, '🫶': 5, '😢': 4, '💧': 3, '😔': 3, '🤍': 2, '🙏': 2, '💔': 2 },
+  cozy: { '🫶': 10, '💙': 8, '✨': 6, '🤍': 5, '🙏': 4, '💪': 4, '😌': 3, '🌸': 3, '🫂': 5, '☀️': 2 },
+  hype: { '🔥': 14, '😂': 9, '👏': 7, '💀': 5, '👀': 4, '🎉': 6, '💯': 5, '🚀': 3, '😭': 4, '⚡': 3 },
+};
 const DAILY_CAP = 200;
 
 const DEFAULT = {
@@ -30,7 +42,7 @@ const DEFAULT = {
   missionCounts: { 'irl-chaos': 36, 'late-night': 11, 'clip-hunters': 0 },
   tasks: {},
   look: { avatar: '🐰', frame: 'kick', title: 'member', color: '#53fc18', effect: 'none', flair: 'none', bubble: 'plain' },
-  roomTheme: { tint: '', accent: '#53fc18', glow: 0.55 },
+  roomTheme: { tint: '', accent: '#53fc18', glow: 0.55, wallpaper: '' },
   followMood: true,
   streamMood: 'chill',
   msgReacts: {},
@@ -102,22 +114,32 @@ const DIM_META = [
   { key: 'Discovery', weight: 0.20, color: 'var(--gold)' },
 ];
 
-const CHAT_CIRCLE = [
-  { id: 's1', system: true, text: 'IRL Chaos Circle chat · slow mode 30s · Circle rules apply' },
-  { id: 'm1', author: 'NightOwl', badge: 'cap', badgeText: 'CAPTAIN', color: '#ffb020', text: 'That rooftop jump was unreal. Clip is up.', reacts: { '🔥': 12, '😂': 3 } },
-  { id: 'm2', author: 'ClipLord', badge: 'sub', badgeText: 'SUB 8', color: '#b06cff', text: 'Weekly mission at 72% — keep the clips relevant', reacts: { '👏': 5 } },
-  { id: 'm3', author: 'TokyoDrift', badge: 'vip', badgeText: 'VIP', color: '#ff5c8a', text: 'wait is he actually going into the arcade', reacts: { '👀': 9, '😂': 2 } },
-  { id: 'm4', author: 'Mod_ChaosBot', badge: 'mod', badgeText: 'MOD', color: '#00d488', text: 'Emote Storm is live — pick your side below', reacts: {} },
-  { id: 'm5', author: 'KEKWKing', text: 'what camera is he using tho', reacts: { '❓': 7 } },
-  { id: 'm6', author: 'PixelPam', badge: 'sub', badgeText: 'SUB 3', color: '#b06cff', text: 'N3on just went live too, circle is stacked tonight', reacts: { '🔥': 6 } },
+const CHAT_STREAM = [
+  { id: 't1', system: true, text: 'Clavicular · Stream chat · Living Room · tap a message to react' },
+  { id: 't2', author: 'NightOwl', badge: 'cap', badgeText: 'CAPTAIN', color: '#ffb020', text: 'That rooftop jump was unreal. Clip is up.', reacts: { '🔥': 12, '😂': 3 } },
+  { id: 't3', author: 'ClipLord', badge: 'sub', badgeText: 'SUB 8', color: '#b06cff', text: 'Weekly mission at 72% — keep the clips relevant', reacts: { '👏': 5 } },
+  { id: 't4', author: 'TokyoDrift', badge: 'vip', badgeText: 'VIP', color: '#ff5c8a', text: 'wait is he actually going into the arcade', reacts: { '👀': 9, '😂': 2 } },
+  { id: 't5', author: 'Mod_ChaosBot', badge: 'mod', badgeText: 'MOD', color: '#00d488', text: 'Emote Storm is live — pick your side below', reacts: {} },
+  { id: 't6', author: 'KEKWKing', text: 'what camera is he using tho', reacts: { '❓': 7 } },
+  { id: 't7', author: 'PixelPam', badge: 'sub', badgeText: 'SUB 3', color: '#b06cff', text: 'N3on just went live too, circle is stacked tonight', reacts: { '🔥': 6 } },
+  { id: 't8', author: 'StreetCam', text: 'bro the wind up there is crazy', reacts: { '👀': 4 } },
+  { id: 't9', author: 'orbitron', text: 'stream chat hitting different tonight', reacts: { '🔥': 3 } },
+  { id: 't10', author: 'gg_enjoyer', text: 'is this the rooftop challenge again', reacts: {} },
+  { id: 't11', author: 'MoonMile', text: 'chat stay ready', reacts: { '👀': 2 } },
+  { id: 't12', author: 'CutKing', text: 'already clipping', reacts: { '🔥': 5 } },
+  { id: 't13', author: 'neon_nova', text: 'viewers climbing rn', reacts: { '🚀': 2 } },
+  { id: 't14', author: 'ReelRat', text: 'this angle is clean', reacts: { '👀': 3 } },
+  { id: 't15', author: 'chatlurker', text: 'LURKING HARD', reacts: {} },
+  { id: 't16', author: 'NightOwl', badge: 'cap', badgeText: 'CAPTAIN', color: '#ffb020', text: 'mods watching · keep it kind', reacts: { '👏': 2 } },
 ];
 
-const CHAT_STREAM = [
-  { id: 't1', system: true, text: 'Welcome to the chat room!' },
-  { id: 't2', author: 'randomviewer91', text: 'W stream', reacts: {} },
-  { id: 't3', author: 'gg_enjoyer', text: 'first time here, this is cool', reacts: {} },
-  { id: 't4', author: 'xX_noscope_Xx', text: 'GO LEFT', reacts: {} },
-  { id: 't5', author: 'chatlurker', text: 'LEFT LEFT LEFT', reacts: {} },
+const CHAT_CIRCLE = [
+  { id: 's1', system: true, text: 'IRL Chaos Circle chat · slow mode 30s · Circle rules apply' },
+  { id: 'm1', author: 'NightOwl', badge: 'cap', badgeText: 'CAPTAIN', color: '#ffb020', text: 'Shared Circle feed · scaffolding for collab', reacts: { '🔥': 4 } },
+  { id: 'm2', author: 'ClipLord', badge: 'sub', badgeText: 'SUB 8', color: '#b06cff', text: 'Weekly mission at 72% — keep the clips relevant', reacts: { '👏': 5 } },
+  { id: 'm3', author: 'TokyoDrift', badge: 'vip', badgeText: 'VIP', color: '#ff5c8a', text: 'circle chat is quieter than stream rn', reacts: { '👀': 3 } },
+  { id: 'm4', author: 'Mod_ChaosBot', badge: 'mod', badgeText: 'MOD', color: '#00d488', text: 'Circle mods active', reacts: {} },
+  { id: 'm5', author: 'PixelPam', badge: 'sub', badgeText: 'SUB 3', color: '#b06cff', text: 'N3on just went live too', reacts: { '🔥': 2 } },
 ];
 
 const CLIPS = [
@@ -301,7 +323,7 @@ const PULSE_BASE = { '😂': 34, '🔥': 61, '💀': 8, '👀': 27, '❓': 14, '
 /* ─── STATE ────────────────────────────────────────────── */
 
 let S = load();
-let activeChat = 'circle';
+let activeChat = 'stream';
 let activeEvent = 'poll';
 
 function load() {
@@ -434,58 +456,248 @@ function renderClips() {
 }
 
 const chatData = () => (activeChat === 'stream' ? CHAT_STREAM : CHAT_CIRCLE);
+/** Living Room surface — Quiet Validation, story, ambience, dense chat */
+const livingRoomChat = () => CHAT_STREAM;
 
-/** Always-visible one-click reacts (no + picker). */
-const CORE_REACTS = ['🔥', '😂', '👀', '💀'];
+/** Which message has the tap-to-react emoji tray open */
+let openEmojiTrayId = null;
 
-let pinnedMsg = null; // { id, author, text, color, badge, badgeText, until }
+let pinnedMsg = null; // validation sticky { id, author, text, color, badge, badgeText, until }
 let pinTimer = null;
+/** Session validating lines for the quick moment board */
+let momentBoardIds = [];
 
-const GOOD_REACTS = new Set(['🔥', '😂', '👏']);
-const GOOD_WORDS = /you got this|w fail|peak|clip that|run it back|best stream|believe in you|hilarious|too nice/i;
+const VALIDATION_REACTS = new Set(['🔥', '👀', '👏', '💙', '🫂', '🫶', '🥺', '🤍', '🙏', '😢']);
+const VALIDATION_WORDS = /same|felt that|you'?re not alone|valid|here for you|it'?s okay to feel|sending love|we got you|allowed to feel|i feel that|you'?re allowed|stay kind|breathe/i;
+const HYPE_BLOCK = /peak content|clip that|w fail|hilarious|lmao|kekw|run it back/i;
 
-function findChatMessage(id) {
-  return CHAT_CIRCLE.find((m) => m.id === id) || CHAT_STREAM.find((m) => m.id === id) || null;
+const COOL_EMOJIS = new Set(['💀', '❓', '👀', '💙', '🫂', '🥺', '😢', '💔', '🫶', '💧', '😔', '🤍', '🙏']);
+const LAUGH_EMOJIS = new Set(['😂', '👏', '😭']);
+const HYPE_EMOJIS = new Set(['🔥', '🎉', '💯', '🚀', '⚡', '✨', '💪']);
+
+function sceneEmojiPack() {
+  return SCENE_EMOJIS[S.streamMood] || SCENE_EMOJIS.chill;
 }
 
-function messageEncourageScore(msg) {
+function trayEmojiList() {
+  return [...new Set([...sceneEmojiPack(), ...REACTIONS.slice(0, 6)])];
+}
+
+function findChatMessage(id) {
+  return CHAT_STREAM.find((m) => m.id === id) || CHAT_CIRCLE.find((m) => m.id === id) || null;
+}
+
+function mergeReactCounts(msg) {
+  const stored = S.msgReacts[msg.id] || {};
+  const all = {};
+  Object.keys(msg.reacts || {}).forEach((k) => { all[k] = msg.reacts[k] || 0; });
+  Object.keys(stored).forEach((k) => { all[k] = (all[k] || 0) + (stored[k] || 0); });
+  return all;
+}
+
+function countedReactChips(msgId, all, mine) {
+  return Object.entries(all)
+    .filter(([, v]) => v > 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([e, v]) => {
+      const on = mine.includes(e) ? 'on' : '';
+      return `<button type="button" class="react-pill ${on}" data-react="${msgId}" data-emo="${e}">${e} ${v}</button>`;
+    }).join('');
+}
+
+function emojiTrayHtml(msgId) {
+  return `<div class="msg-emoji-tray" data-tray="${msgId}">${
+    trayEmojiList().map((e) =>
+      `<button type="button" class="tray-emo" data-react="${msgId}" data-emo="${e}">${e}</button>`
+    ).join('')
+  }</div>`;
+}
+
+function bindMessageReacts(root) {
+  if (!root) return;
+  root.querySelectorAll('[data-tap-msg]').forEach((el) => {
+    el.onclick = (e) => {
+      e.stopPropagation();
+      const id = el.dataset.tapMsg;
+      openEmojiTrayId = openEmojiTrayId === id ? null : id;
+      if (root.id === 'chatBody' || root === $('chatBody')) renderChat();
+      else if (root.id === 'cdChatBody') renderCreatorChat();
+      else renderChatPin();
+    };
+  });
+  root.querySelectorAll('[data-react]').forEach((b) => {
+    b.onclick = (e) => {
+      e.stopPropagation();
+      addReaction(b.dataset.react, b.dataset.emo);
+      openEmojiTrayId = null;
+    };
+  });
+}
+
+function isLowMoodMoment() {
+  try {
+    const room = getRoomMood().mood;
+    return room === 'cool' || S.streamMood === 'tense';
+  } catch (e) {
+    return S.streamMood === 'tense';
+  }
+}
+
+function validationScore(msg) {
   if (!msg || msg.system) return 0;
+  if (HYPE_BLOCK.test(msg.text || '')) return 0;
   const stored = S.msgReacts[msg.id] || {};
   let score = 0;
-  GOOD_REACTS.forEach((e) => {
+  VALIDATION_REACTS.forEach((e) => {
     score += (msg.reacts && msg.reacts[e] || 0) + (stored[e] || 0);
   });
-  if (GOOD_WORDS.test(msg.text || '')) score += 4;
+  if (VALIDATION_WORDS.test(msg.text || '')) score += 6;
   return score;
+}
+
+function trackMomentBoard(msgId) {
+  if (!msgId) return;
+  if (!momentBoardIds.includes(msgId)) momentBoardIds.unshift(msgId);
+  momentBoardIds = momentBoardIds.slice(0, 12);
+  renderMomentBoard();
+}
+
+function renderMomentBoard() {
+  const el = $('momentBoard');
+  if (!el) return;
+  const rows = momentBoardIds
+    .map((id) => findChatMessage(id))
+    .filter((m) => m && validationScore(m) > 0)
+    .sort((a, b) => validationScore(b) - validationScore(a))
+    .slice(0, 3);
+
+  if (!rows.length) {
+    el.hidden = true;
+    el.innerHTML = '';
+    return;
+  }
+
+  el.hidden = false;
+  el.innerHTML = `
+    <div class="moment-board-label">Moment board · validated lines</div>
+    ${rows.map((m, i) => `
+      <div class="moment-row">
+        <span class="moment-rank">${i + 1}</span>
+        <span class="moment-text"><b style="color:${m.color || '#c9d6dc'}">${m.author}</b> ${m.text}</span>
+        <span class="moment-score">${validationScore(m)}</span>
+      </div>`).join('')}`;
+}
+
+function engageScore(msg) {
+  if (!msg || msg.system) return 0;
+  const reacts = Object.values(mergeReactCounts(msg)).reduce((a, b) => a + b, 0);
+  return reacts + (VALIDATION_WORDS.test(msg.text || '') ? 20 : 0);
+}
+
+function isPinLive() {
+  return !!(pinnedMsg && Date.now() <= pinnedMsg.until);
+}
+
+/** Keep a featured Stream message fixed above the scrolling feed. */
+function ensureLivingRoomSticky() {
+  if (activeChat !== 'stream') return;
+  if (isPinLive()) return;
+
+  const ranked = livingRoomChat()
+    .filter((m) => !m.system)
+    .map((m) => ({ m, s: Math.max(validationScore(m), engageScore(m)) }))
+    .sort((a, b) => b.s - a.s);
+
+  const best = ranked[0];
+  if (!best || best.s < 3) return;
+
+  const kind = validationScore(best.m) > 0 || VALIDATION_WORDS.test(best.m.text || '')
+    ? 'validation'
+    : 'moment';
+  pinValidationMessage(best.m, { force: true, kind });
 }
 
 function renderChatPin() {
   const el = $('chatPin');
   if (!el) return;
-  if (!pinnedMsg || Date.now() > pinnedMsg.until) {
+  if (!isPinLive()) {
+    if (pinnedMsg && Date.now() > pinnedMsg.until) pinnedMsg = null;
     el.hidden = true;
     el.innerHTML = '';
+    renderMomentBoard();
     return;
   }
+
+  const msg = findChatMessage(pinnedMsg.id) || pinnedMsg;
+  const all = mergeReactCounts(msg);
+  const mine = S.myReacts[pinnedMsg.id] || [];
+  const pills = countedReactChips(pinnedMsg.id, all, mine);
+  const tray = openEmojiTrayId === pinnedMsg.id ? emojiTrayHtml(pinnedMsg.id) : '';
   const badge = pinnedMsg.badge
     ? `<span class="msg-badge b-${pinnedMsg.badge}">${pinnedMsg.badgeText}</span>`
     : '';
+  const label = pinnedMsg.kind === 'validation'
+    ? 'Quiet validation · sticky · tap to react'
+    : 'Pinned · sticky · chat rolls underneath';
+
   el.hidden = false;
+  el.style.removeProperty('display');
+  el.classList.add('validation-sticky');
   el.innerHTML = `
-    <div class="chat-pin-label">Pinned · good moment</div>
-    <div class="chat-pin-body">
+    <div class="chat-pin-label">${label}</div>
+    <div class="chat-pin-body" data-tap-msg="${pinnedMsg.id}">
       ${badge}<span class="msg-author" style="color:${pinnedMsg.color || '#c9d6dc'}">${pinnedMsg.author}</span>
       ${pinnedMsg.text}
-    </div>`;
+    </div>
+    <div class="msg-reacts chat-pin-reacts">${pills}</div>
+    ${tray}`;
+
+  bindMessageReacts(el);
+  renderMomentBoard();
 }
 
-function pinGoodMessage(msg, { force } = {}) {
+function seedStickyReacts(msg, beat) {
+  const seed = STICKY_SEED[beat] || STICKY_SEED.tense;
+  msg.reacts = msg.reacts || {};
+  Object.entries(seed).forEach(([emo, n]) => {
+    msg.reacts[emo] = Math.max(msg.reacts[emo] || 0, n);
+    pushReactionLog(emo, Math.min(n, 4));
+  });
+}
+
+function pinValidationMessage(msg, { force, seed, kind } = {}) {
   if (!msg || msg.system) return;
-  const score = messageEncourageScore(msg);
-  const keywordHit = GOOD_WORDS.test(msg.text || '');
-  if (!force && !keywordHit && score < 5) return;
-  if (!force && keywordHit && score < 3) return;
-  if (pinnedMsg && pinnedMsg.id === msg.id && pinnedMsg.until > Date.now()) return;
+  if (!force && HYPE_BLOCK.test(msg.text || '')) return;
+
+  if (seed) seedStickyReacts(msg, S.streamMood || 'tense');
+
+  const score = validationScore(msg);
+  const keywordHit = VALIDATION_WORDS.test(msg.text || '');
+  const low = isLowMoodMoment();
+
+  if (!force) {
+    if (!keywordHit && !(low && score >= 3)) return;
+    if (keywordHit && score < 2 && !low) return;
+  }
+
+  const existingScore = pinnedMsg ? validationScore(findChatMessage(pinnedMsg.id) || pinnedMsg) : -1;
+  if (
+    pinnedMsg
+    && pinnedMsg.id !== msg.id
+    && pinnedMsg.until > Date.now()
+    && !force
+    && score < existingScore
+  ) return;
+
+  if (pinnedMsg && pinnedMsg.id === msg.id && pinnedMsg.until > Date.now() && !force) {
+    trackMomentBoard(msg.id);
+    renderChatPin();
+    return;
+  }
+
+  const pinKind = kind
+    || (keywordHit || score > 0 ? 'validation' : 'moment');
+  const hold = force ? 180000 : 60000;
 
   pinnedMsg = {
     id: msg.id,
@@ -494,63 +706,64 @@ function pinGoodMessage(msg, { force } = {}) {
     color: msg.color,
     badge: msg.badge,
     badgeText: msg.badgeText,
-    until: Date.now() + 10000,
+    reacts: msg.reacts || {},
+    kind: pinKind,
+    until: Date.now() + hold,
   };
+  trackMomentBoard(msg.id);
   if (pinTimer) clearTimeout(pinTimer);
   pinTimer = setTimeout(() => {
     if (pinnedMsg && pinnedMsg.id === msg.id) {
       pinnedMsg = null;
       renderChatPin();
+      if (activeChat === 'stream') {
+        ensureLivingRoomSticky();
+        renderChat();
+      }
     }
-  }, 10000);
+  }, hold);
   renderChatPin();
 }
 
-function msgReactRow(msgId, all, mine) {
-  return CORE_REACTS.map((e) => {
-    const v = all[e] || 0;
-    const on = mine.includes(e) ? 'on' : '';
-    return `<button type="button" class="react-pill ${on}" data-react="${msgId}" data-emo="${e}">${e}${v ? ` ${v}` : ''}</button>`;
-  }).join('');
+/** @deprecated use pinValidationMessage — kept as alias for story burst paths */
+function pinGoodMessage(msg, opts) {
+  pinValidationMessage(msg, opts);
 }
 
 function renderChat() {
   if (activeChat === 'mood') applyChatMode();
   else {
-    $('chatContext').textContent = activeChat === 'circle'
-      ? `Shared across 3 connected creators · ${S.privacy.slowMode ? 'slow mode' : 'open'} · Circle mods active`
-      : 'Clavicular channel chat · standard Kick chat';
+    $('chatContext').textContent = activeChat === 'stream'
+      ? 'Living Room · tap a message to react · Quiet Validation + mood ambience'
+      : `Shared across 3 connected creators · ${S.privacy.slowMode ? 'slow mode' : 'open'} · Circle mods active`;
   }
 
+  if (activeChat === 'stream') ensureLivingRoomSticky();
   renderChatPin();
 
-  $('chatBody').innerHTML = chatData().map((m) => {
+  const pinId = isPinLive() ? pinnedMsg.id : null;
+  // Sticky lives outside the scroller — omit duplicate from rolling feed
+  $('chatBody').innerHTML = chatData().filter((m) => m.id !== pinId).map((m) => {
     if (m.system) return `<div class="msg system">${m.text}</div>`;
-    const stored = S.msgReacts[m.id] || {};
-    const all = {};
-    [...CORE_REACTS, ...Object.keys(m.reacts || {}), ...Object.keys(stored)].forEach((k) => {
-      all[k] = ((m.reacts || {})[k] || 0) + (stored[k] || 0);
-    });
+    const all = mergeReactCounts(m);
     const mine = S.myReacts[m.id] || [];
-    const pills = msgReactRow(m.id, all, mine);
+    const pills = countedReactChips(m.id, all, mine);
+    const tray = openEmojiTrayId === m.id ? emojiTrayHtml(m.id) : '';
     const badge = m.badge ? `<span class="msg-badge b-${m.badge}">${m.badgeText}</span>` : '';
     const k = m.mine ? myLook() : null;
     const head = k
       ? `${k.flair}<span class="${k.nameCls}" style="${k.nameStyle}">${m.author}</span>`
       : `${badge}<span class="msg-author" style="color:${m.color || '#c9d6dc'}">${m.author}</span>`;
-    const pinned = pinnedMsg && pinnedMsg.id === m.id && pinnedMsg.until > Date.now();
     return `
-      <div class="${k ? k.cls : 'msg'}${pinned ? ' is-pinned' : ''}" style="${k ? k.style : ''}">
-        <div class="msg-line">${head}${m.text}</div>
+      <div class="${k ? k.cls : 'msg'}" style="${k ? k.style : ''}" data-msg-id="${m.id}">
+        <div class="msg-line" data-tap-msg="${m.id}">${head}${m.text}</div>
         <div class="msg-reacts">${pills}</div>
+        ${tray}
       </div>`;
   }).join('');
 
   $('chatBody').scrollTop = $('chatBody').scrollHeight;
-
-  $('chatBody').querySelectorAll('[data-react]').forEach((b) => {
-    b.onclick = () => addReaction(b.dataset.react, b.dataset.emo);
-  });
+  bindMessageReacts($('chatBody'));
 }
 
 function addReaction(msgId, emo) {
@@ -584,22 +797,26 @@ function addReaction(msgId, emo) {
   if (added) {
     bumpReactPill(msgId, emo);
     const msg = findChatMessage(msgId);
-    if (msg) pinGoodMessage(msg);
+    if (msg) pinValidationMessage(msg);
+  } else {
+    renderChatPin();
   }
 }
 
 function sendMessage(text) {
-  const dest = activeChat === 'mood' ? 'circle' : activeChat;
+  const dest = activeChat === 'mood' ? 'stream' : activeChat;
   const list = dest === 'stream' ? CHAT_STREAM : CHAT_CIRCLE;
-  list.push({ id: `me${Date.now()}`, author: 'SpookyBunny', mine: true, text, reacts: {} });
+  const msg = { id: `me${Date.now()}`, author: 'SpookyBunny', mine: true, text, reacts: {} };
+  list.push(msg);
   S.chatMessages += 1;
   if (text.includes('?')) S.questionsAsked += 1;
   save();
   checkStyleUnlocks();
-  if (dest === 'circle') {
+  if (dest === 'stream') {
     bumpTask('chat');
     applyMessageSignal(text, true);
   }
+  pinValidationMessage(msg);
   if (activeChat !== 'mood') renderChat();
   else renderMoodUI();
 }
@@ -609,6 +826,8 @@ function sendMessage(text) {
 /** Sliding-window reaction events. Audience owns roomMood. Session-only (↺ clears). */
 let reactionLog = [];
 let lastHintBeat = null;
+let lastRoomMoodSeen = 'neutral';
+let lastRoomMoodHinted = null;
 let roomMoodTick = null;
 let beatTimelineTimer = null;
 let storyTimers = [];
@@ -626,6 +845,47 @@ const ROOM_MOOD_META = {
   laugh: { label: 'Laughing', ic: '😂', className: 'mood-laugh' },
   cool: { label: 'Cool / confused', ic: '💀', className: 'mood-cool' },
 };
+
+/** Audience roomMood → suggested Room Studio tokens */
+const ROOM_MOOD_PALETTES = {
+  hype: {
+    hint: 'Room feels warm — light it up?',
+    whisper: 'room feels warm',
+    ic: '🔥',
+    accent: '#ff8a3d',
+    tint: 'rgba(255,138,61,.14)',
+    wallpaper: 'warm-mesh',
+  },
+  laugh: {
+    hint: 'Room feels playful — soft gold?',
+    whisper: 'room feels playful',
+    ic: '😂',
+    accent: '#ffd84a',
+    tint: 'rgba(255,216,74,.12)',
+    wallpaper: 'amber-soft',
+  },
+  cool: {
+    hint: 'Room feels quiet — cool the lights?',
+    whisper: 'room feels quiet',
+    ic: '💙',
+    accent: '#7b9cff',
+    tint: 'rgba(123,156,255,.12)',
+    wallpaper: 'cool-mesh',
+  },
+  neutral: {
+    whisper: 'room feels calm',
+    ic: '·',
+  },
+};
+
+const WALLPAPER_PRESETS = [
+  { id: '', label: 'None' },
+  { id: 'warm-mesh', label: 'Warm mesh' },
+  { id: 'cool-mesh', label: 'Cool mesh' },
+  { id: 'amber-soft', label: 'Amber soft' },
+  { id: 'night-city', label: 'Night city' },
+  { id: 'rooftop-soft', label: 'Rooftop' },
+];
 
 const STREAM_BEATS = {
   hype: {
@@ -689,9 +949,9 @@ function getRoomMood() {
 
   let mood = 'neutral';
   if (share >= 0.4) {
-    if (topEmo === '🔥') mood = 'hype';
-    else if (topEmo === '😂' || topEmo === '👏') mood = 'laugh';
-    else if (topEmo === '💀' || topEmo === '❓' || topEmo === '👀') mood = 'cool';
+    if (HYPE_EMOJIS.has(topEmo)) mood = 'hype';
+    else if (LAUGH_EMOJIS.has(topEmo)) mood = 'laugh';
+    else if (COOL_EMOJIS.has(topEmo)) mood = 'cool';
   }
 
   return {
@@ -715,16 +975,22 @@ function bumpReactPill(msgId, emo) {
 function applyRoomTheme() {
   const rail = document.querySelector('.chat-rail');
   if (!rail) return;
-  const rt = S.roomTheme || DEFAULT.roomTheme;
+  const rt = { ...DEFAULT.roomTheme, ...(S.roomTheme || {}) };
+  S.roomTheme = rt;
   rail.style.setProperty('--room-accent', rt.accent || '#53fc18');
   rail.style.setProperty('--room-glow', String(rt.glow ?? 0.55));
   if (rt.tint) {
     rail.style.setProperty('--room-tint', rt.tint);
-    rail.style.background = `linear-gradient(${rt.tint}, ${rt.tint}), var(--surface)`;
+    rail.classList.add('has-tint');
   } else {
     rail.style.removeProperty('--room-tint');
-    rail.style.background = '';
+    rail.classList.remove('has-tint');
   }
+  const wp = rt.wallpaper || '';
+  if (wp) rail.setAttribute('data-wallpaper', wp);
+  else rail.removeAttribute('data-wallpaper');
+  // Let CSS compose wallpaper + tint layers (no inline background override)
+  rail.style.background = '';
 }
 
 function applySharedWash() {
@@ -739,6 +1005,47 @@ function applySharedWash() {
   if (rail) rail.classList.add(meta.className);
   players.forEach((p) => p.classList.add(meta.className));
   applyRoomTheme();
+  updateRoomFeelWhisper(mood);
+}
+
+function updateRoomFeelWhisper(mood) {
+  const el = $('roomFeelWhisper');
+  if (!el) return;
+  const pal = ROOM_MOOD_PALETTES[mood] || ROOM_MOOD_PALETTES.neutral;
+  if (!mood || mood === 'neutral') {
+    el.hidden = true;
+    el.textContent = '';
+    return;
+  }
+  el.hidden = false;
+  el.textContent = pal.whisper || '';
+}
+
+function bindMoodHintActions(onAccept) {
+  const chip = $('moodHintChip');
+  if (!chip) return;
+  const accept = $('hintAccept');
+  const dismiss = $('hintDismiss');
+  const body = $('hintBody');
+  if (accept) {
+    accept.onclick = (e) => {
+      e.stopPropagation();
+      onAccept();
+      hideMoodHint();
+    };
+  }
+  if (dismiss) {
+    dismiss.onclick = (e) => {
+      e.stopPropagation();
+      hideMoodHint();
+    };
+  }
+  if (body) body.onclick = () => { onAccept(); hideMoodHint(); };
+  chip.onclick = (e) => {
+    if (e.target.closest('button')) return;
+    onAccept();
+    hideMoodHint();
+  };
 }
 
 function showMoodHint(force = false) {
@@ -748,36 +1055,83 @@ function showMoodHint(force = false) {
   if (!force && lastHintBeat === S.streamMood && chip.classList.contains('show')) return;
 
   lastHintBeat = S.streamMood;
+  lastRoomMoodHinted = null;
   chip.innerHTML = `
     <span class="hint-ic">${beat.ic}</span>
-    <span class="hint-text">${beat.hint}</span>
+    <span class="hint-text" id="hintBody">${beat.hint}</span>
     <button type="button" class="hint-accept" id="hintAccept">Accept</button>
     <button type="button" class="hint-dismiss" id="hintDismiss">Dismiss</button>`;
   chip.classList.add('show');
+  bindMoodHintActions(() => applyStreamPalette(true, { quiet: true }));
+}
 
-  const accept = $('hintAccept');
-  const dismiss = $('hintDismiss');
-  if (accept) accept.onclick = () => { applyStreamPalette(true); hideMoodHint(); };
-  if (dismiss) dismiss.onclick = () => hideMoodHint();
+function showRoomMoodHint(mood) {
+  const chip = $('moodHintChip');
+  const pal = ROOM_MOOD_PALETTES[mood];
+  if (!chip || !pal || !pal.hint) return;
+
+  lastRoomMoodHinted = mood;
+  lastHintBeat = null;
+  chip.innerHTML = `
+    <span class="hint-ic">${pal.ic}</span>
+    <span class="hint-text" id="hintBody">${pal.hint}</span>
+    <button type="button" class="hint-accept" id="hintAccept">Accept</button>
+    <button type="button" class="hint-dismiss" id="hintDismiss">Dismiss</button>`;
+  chip.classList.add('show');
+  bindMoodHintActions(() => applyRoomMoodPalette(mood, { quiet: true }));
 }
 
 function hideMoodHint() {
   const chip = $('moodHintChip');
-  if (chip) chip.classList.remove('show');
+  if (chip) {
+    chip.classList.remove('show');
+    chip.onclick = null;
+  }
+}
+
+function applyRoomMoodPalette(mood, { quiet } = {}) {
+  const pal = ROOM_MOOD_PALETTES[mood];
+  if (!pal || !pal.accent) return;
+  S.roomTheme = { ...DEFAULT.roomTheme, ...(S.roomTheme || {}) };
+  S.roomTheme.accent = pal.accent;
+  S.roomTheme.tint = pal.tint;
+  S.roomTheme.wallpaper = pal.wallpaper || S.roomTheme.wallpaper || '';
+  save();
+  applyRoomTheme();
+  applySharedWash();
+  lastRoomMoodHinted = mood;
+  if ($('styleModal')?.classList.contains('open')) renderStyle();
 }
 
 function applyStreamPalette(fromAccept, { quiet } = {}) {
   const beat = STREAM_BEATS[S.streamMood] || STREAM_BEATS.chill;
-  S.roomTheme = S.roomTheme || { ...DEFAULT.roomTheme };
+  S.roomTheme = { ...DEFAULT.roomTheme, ...(S.roomTheme || {}) };
   S.roomTheme.accent = beat.accent;
   if (beat.tintHint) S.roomTheme.tint = beat.tintHint;
   save();
   applyRoomTheme();
-  if (!quiet) {
-    if (fromAccept) toast('Room lighting', beat.hint.replace('?', ''), beat.ic);
-    else toast('Follow mode', `Room followed ${beat.label}`, beat.ic);
+  // Ambience accept is silent; Follow auto-apply stays quiet when asked
+  if (!quiet && !fromAccept) {
+    /* no toast — lighting should feel ambient, not an alert */
   }
   if ($('styleModal')?.classList.contains('open')) renderStyle();
+}
+
+function maybeSuggestRoomMood() {
+  const { mood } = getRoomMood();
+  updateRoomFeelWhisper(mood);
+  if (mood === lastRoomMoodSeen) return;
+  lastRoomMoodSeen = mood;
+
+  if (mood === 'neutral') return;
+
+  if (S.followMood !== false) {
+    applyRoomMoodPalette(mood, { quiet: true });
+    hideMoodHint();
+    return;
+  }
+
+  if (lastRoomMoodHinted !== mood) showRoomMoodHint(mood);
 }
 
 function setStreamMood(id, { silent } = {}) {
@@ -788,7 +1142,7 @@ function setStreamMood(id, { silent } = {}) {
   if (activeEvent === 'pulse') renderEvent();
 
   if (S.followMood) {
-    applyStreamPalette(false, { quiet: !!silent });
+    applyStreamPalette(false, { quiet: true });
     hideMoodHint();
   } else if (!silent) {
     showMoodHint(true);
@@ -797,7 +1151,7 @@ function setStreamMood(id, { silent } = {}) {
 
 function burstReactions(emo = '🔥', n = 8) {
   pushReactionLog(emo, n);
-  const list = CHAT_CIRCLE.filter((m) => !m.system);
+  const list = livingRoomChat().filter((m) => !m.system);
   const target = list[list.length - 1];
   if (target) {
     S.msgReacts[target.id] = S.msgReacts[target.id] || {};
@@ -807,13 +1161,25 @@ function burstReactions(emo = '🔥', n = 8) {
   }
   if (REACT_MOOD[emo]) nudgeMood(REACT_MOOD[emo], Math.min(6, n), true);
   onReactionChange();
-  toast('Demo burst', `${n}× ${emo} into the room`, emo);
 }
 
 function onReactionChange() {
   applySharedWash();
+  maybeSuggestRoomMood();
   renderMoodPulse();
   renderCreatorChat();
+  if (activeEvent === 'pulse') renderEvent();
+}
+
+function resetAmbience() {
+  reactionLog = [];
+  lastRoomMoodSeen = 'neutral';
+  lastRoomMoodHinted = null;
+  lastHintBeat = null;
+  hideMoodHint();
+  applySharedWash();
+  updateRoomFeelWhisper('neutral');
+  renderMoodPulse();
   if (activeEvent === 'pulse') renderEvent();
 }
 
@@ -833,6 +1199,7 @@ function startRoomMoodTick() {
   if (roomMoodTick) clearInterval(roomMoodTick);
   roomMoodTick = setInterval(() => {
     applySharedWash();
+    maybeSuggestRoomMood();
     renderMoodPulse();
   }, 1000);
 }
@@ -849,14 +1216,19 @@ function startBeatTimeline() {
 function resetLivingRoomSession() {
   reactionLog = [];
   lastHintBeat = null;
+  lastRoomMoodSeen = 'neutral';
+  lastRoomMoodHinted = null;
   hideMoodHint();
+  updateRoomFeelWhisper('neutral');
 }
 
 /* ─── FAIL → ENCOURAGE STORY DEMO ──────────────────────── */
 
 const STORY_BASE_CHAT = [
-  { id: 'story-sys', system: true, text: 'IRL rooftop challenge · story demo · reactions drive roomMood' },
+  { id: 'story-sys', system: true, text: 'IRL rooftop challenge · Stream Living Room · reactions drive roomMood' },
   { id: 'story-m0', author: 'NightOwl', badge: 'cap', badgeText: 'CAPTAIN', color: '#ffb020', text: 'he lining up the jump…', reacts: { '👀': 4 } },
+  { id: 'story-m1', author: 'StreetCam', text: 'wind is loud up there', reacts: { '👀': 2 } },
+  { id: 'story-m2', author: 'chatlurker', text: 'chat hold', reacts: {} },
 ];
 
 const STORY_DEMO = {
@@ -867,41 +1239,85 @@ const STORY_DEMO = {
     { at: 28000, act: 3, chip: 'Act 3 · Loved it', caption: 'They liked the real moment — room is peaking', beat: 'hype', viewers: 14890 },
   ],
   messages: [
-    { at: 800, author: 'Clavicular', badge: 'stream', badgeText: 'STREAMER', color: '#53fc18', text: 'man… that one stung. feeling kinda low rn', reacts: {} },
-    { at: 2200, author: 'TokyoDrift', badge: 'vip', badgeText: 'VIP', color: '#ff5c8a', text: 'oh nooo', reacts: { '💀': 2 } },
-    { at: 3800, author: 'gg_enjoyer', text: 'L', reacts: { '💀': 3 } },
-    { at: 5200, author: 'KEKWKing', text: 'unlucky man', reacts: { '👀': 2 } },
-    { at: 7000, author: 'chatlurker', text: 'he looks actually upset', reacts: { '👀': 4 } },
-    { at: 9000, author: 'Mod_ChaosBot', badge: 'mod', badgeText: 'MOD', color: '#00d488', text: 'breathe — chat stay kind', reacts: {} },
+    // Act 1 — tense / low (~15 lines)
+    { at: 500, author: 'Clavicular', badge: 'stream', badgeText: 'STREAMER', color: '#53fc18', text: 'man… that one stung. feeling kinda low rn', reacts: {} },
+    { at: 1100, author: 'TokyoDrift', badge: 'vip', badgeText: 'VIP', color: '#ff5c8a', text: 'oh nooo', reacts: { '🥺': 2 } },
+    { at: 1700, author: 'gg_enjoyer', text: '…', reacts: {} },
+    { at: 2300, author: 'KEKWKing', text: 'unlucky man', reacts: { '😔': 2 } },
+    { at: 2900, author: 'beanbag', text: 'that looked rough', reacts: { '👀': 2 } },
+    { at: 3500, author: 'quietfox', text: 'chat went quiet', reacts: {} },
+    { at: 4200, author: 'lowkey_fan', text: 'he okay?', reacts: { '❓': 2 } },
+    { at: 4900, author: 'spice_rack', text: 'take a sec bro', reacts: {} },
+    { at: 5600, author: 'chatlurker', text: 'he looks actually upset', reacts: { '👀': 3 } },
+    { at: 6300, author: 'PixelPam', badge: 'sub', badgeText: 'SUB 3', color: '#b06cff', text: 'felt that. you’re allowed to feel it', reacts: {}, forcePin: true },
+    { at: 7000, author: 'orbitron', text: 'same', reacts: { '💙': 2 } },
+    { at: 7600, author: 'NightOwl', badge: 'cap', badgeText: 'CAPTAIN', color: '#ffb020', text: 'you’re not alone in here', reacts: { '🫂': 2 } },
+    { at: 8200, author: 'Mod_ChaosBot', badge: 'mod', badgeText: 'MOD', color: '#00d488', text: 'breathe — chat stay kind', reacts: { '🙏': 2 } },
+    { at: 9000, author: 'ReelRat', text: 'no jokes rn', reacts: {} },
+    { at: 9800, author: 'MoonMile', text: 'sending love from chat', reacts: { '🫶': 3 } },
+    { at: 10800, author: 'CutKing', text: 'we got you', reacts: { '💙': 2 } },
 
-    { at: 12500, author: 'PixelPam', badge: 'sub', badgeText: 'SUB 3', color: '#b06cff', text: 'you got this 🔥', reacts: { '🔥': 5, '👏': 3 } },
-    { at: 14200, author: 'NightOwl', badge: 'cap', badgeText: 'CAPTAIN', color: '#ffb020', text: 'W fail honestly', reacts: { '😂': 4, '👏': 2 } },
-    { at: 15800, author: 'ClipLord', badge: 'sub', badgeText: 'SUB 8', color: '#b06cff', text: 'that was actually hilarious — run it back', reacts: { '🔥': 6 } },
-    { at: 17500, author: 'orbitron', text: 'we believe in you', reacts: { '👏': 5 } },
-    { at: 19200, author: 'neon_nova', text: 'best content is when it goes wrong', reacts: { '🔥': 4, '😂': 3 } },
-    { at: 21000, author: 'StreetCam', text: 'chat is warmer than he feels rn', reacts: { '👀': 2, '🔥': 3 } },
-    { at: 23500, author: 'Clavicular', badge: 'stream', badgeText: 'STREAMER', color: '#53fc18', text: 'okay… okay you guys are too nice', reacts: { '👏': 8 } },
+    // Act 2 — cozy / lift (~16 lines)
+    { at: 12200, author: 'orbitron', text: 'here for you — we got you', reacts: { '🫶': 3 } },
+    { at: 12800, author: 'neon_nova', text: 'it’s okay to feel this', reacts: { '💙': 2 } },
+    { at: 13400, author: 'NightOwl', badge: 'cap', badgeText: 'CAPTAIN', color: '#ffb020', text: 'sending love. take your time', reacts: { '🤍': 3 } },
+    { at: 14100, author: 'PixelPam', badge: 'sub', badgeText: 'SUB 3', color: '#b06cff', text: 'valid. room is with you', reacts: { '🫂': 4 } },
+    { at: 14800, author: 'StreetCam', text: 'chat is warmer than he feels rn', reacts: { '👀': 2 } },
+    { at: 15500, author: 'ClipLord', badge: 'sub', badgeText: 'SUB 8', color: '#b06cff', text: 'you’re allowed. no rush', reacts: { '✨': 3 } },
+    { at: 16200, author: 'gg_enjoyer', text: 'same energy — felt that hard', reacts: { '💙': 2 } },
+    { at: 16900, author: 'TokyoDrift', badge: 'vip', badgeText: 'VIP', color: '#ff5c8a', text: 'we believe in soft resets', reacts: { '🙏': 2 } },
+    { at: 17600, author: 'KEKWKing', text: 'stay kind chat', reacts: {} },
+    { at: 18300, author: 'ReelRat', text: 'you’re not alone in this room', reacts: { '🫂': 3 } },
+    { at: 19100, author: 'beanbag', text: 'breathe with us', reacts: { '💧': 2 } },
+    { at: 19900, author: 'lowkey_fan', text: 'this is the real moment', reacts: { '👀': 2 } },
+    { at: 20800, author: 'spice_rack', text: 'here for you', reacts: { '🫶': 2 } },
+    { at: 21800, author: 'quietfox', text: 'room holding space', reacts: { '🤍': 2 } },
+    { at: 22800, author: 'Clavicular', badge: 'stream', badgeText: 'STREAMER', color: '#53fc18', text: 'okay… okay you guys are too nice', reacts: { '💙': 5 } },
+    { at: 24200, author: 'NightOwl', badge: 'cap', badgeText: 'CAPTAIN', color: '#ffb020', text: 'that’s it. feel it then climb', reacts: { '💪': 3 } },
+    { at: 25800, author: 'Mod_ChaosBot', badge: 'mod', badgeText: 'MOD', color: '#00d488', text: 'kind chat W', reacts: { '👏': 2 } },
 
-    { at: 29000, author: 'KEKWKing', text: 'PEAK CONTENT', reacts: { '🔥': 9, '😂': 5 } },
-    { at: 30800, author: 'CutKing', text: 'CLIP THAT', reacts: { '🔥': 7 } },
-    { at: 32500, author: 'ReelRat', text: 'best stream all week', reacts: { '🔥': 6, '👏': 3 } },
-    { at: 34800, author: 'MoonMile', text: 'they liked the fail more than the jump LMAO', reacts: { '😂': 8 } },
-    { at: 38000, author: 'Clavicular', badge: 'stream', badgeText: 'STREAMER', color: '#53fc18', text: 'fine — running it back. y’all wild', reacts: { '🔥': 11 } },
-    { at: 42000, author: 'NightOwl', badge: 'cap', badgeText: 'CAPTAIN', color: '#ffb020', text: 'room is peaking — this is the loop', reacts: { '🔥': 4 } },
+    // Act 3 — hype (~16 lines)
+    { at: 28500, author: 'KEKWKing', text: 'PEAK CONTENT', reacts: { '🔥': 6 } },
+    { at: 29200, author: 'CutKing', text: 'CLIP THAT', reacts: { '🔥': 5 } },
+    { at: 29900, author: 'ReelRat', text: 'best stream all week', reacts: { '🔥': 4 } },
+    { at: 30600, author: 'MoonMile', text: 'they liked the fail more than the jump LMAO', reacts: { '😂': 5 } },
+    { at: 31300, author: 'TokyoDrift', badge: 'vip', badgeText: 'VIP', color: '#ff5c8a', text: 'CHAT IS COOKING', reacts: { '🔥': 4 } },
+    { at: 32000, author: 'neon_nova', text: 'this is the loop', reacts: { '⚡': 3 } },
+    { at: 32800, author: 'orbitron', text: 'run it back', reacts: { '🚀': 3 } },
+    { at: 33600, author: 'PixelPam', badge: 'sub', badgeText: 'SUB 3', color: '#b06cff', text: 'from low to loved — insane arc', reacts: { '😭': 4 } },
+    { at: 34400, author: 'StreetCam', text: 'viewers spiking', reacts: { '👀': 3 } },
+    { at: 35200, author: 'ClipLord', badge: 'sub', badgeText: 'SUB 8', color: '#b06cff', text: 'already in the reel', reacts: { '💯': 3 } },
+    { at: 36000, author: 'gg_enjoyer', text: 'W ROOM', reacts: { '🎉': 4 } },
+    { at: 37000, author: 'beanbag', text: 'he smiling now', reacts: { '😂': 2 } },
+    { at: 38000, author: 'Clavicular', badge: 'stream', badgeText: 'STREAMER', color: '#53fc18', text: 'fine — running it back. y’all wild', reacts: { '🔥': 8 } },
+    { at: 39500, author: 'NightOwl', badge: 'cap', badgeText: 'CAPTAIN', color: '#ffb020', text: 'room is peaking — this is the loop', reacts: { '🔥': 4 } },
+    { at: 41000, author: 'raid_ready', text: 'RAID ENERGY', reacts: { '🚀': 3 } },
+    { at: 42500, author: 'Mod_ChaosBot', badge: 'mod', badgeText: 'MOD', color: '#00d488', text: 'keep the love rolling', reacts: { '👏': 3 } },
+    { at: 44000, author: 'chatlurker', text: 'best fail → love pipeline ever', reacts: { '😂': 3, '🔥': 2 } },
   ],
   bursts: [
-    { at: 2500, emo: '💀', n: 3 },
+    // Act 1 — soft reacts onto sticky when present
+    { at: 2800, emo: '😔', n: 3 },
     { at: 4500, emo: '👀', n: 4 },
-    { at: 8000, emo: '💀', n: 2 },
-    { at: 13000, emo: '👏', n: 6 },
-    { at: 14500, emo: '🔥', n: 8 },
-    { at: 17000, emo: '😂', n: 5 },
-    { at: 19500, emo: '🔥', n: 7 },
-    { at: 22000, emo: '👏', n: 5 },
-    { at: 29500, emo: '🔥', n: 10 },
-    { at: 31000, emo: '😂', n: 8 },
-    { at: 34000, emo: '🔥', n: 9 },
-    { at: 38500, emo: '🔥', n: 6 },
+    { at: 6800, emo: '💙', n: 6, pin: true },
+    { at: 7500, emo: '🫂', n: 5, pin: true },
+    { at: 8500, emo: '🥺', n: 4, pin: true },
+    { at: 9500, emo: '🫶', n: 5, pin: true },
+    { at: 10500, emo: '😢', n: 3, pin: true },
+    // Act 2 — cozy pile on sticky
+    { at: 13000, emo: '🫶', n: 6, pin: true },
+    { at: 14500, emo: '💙', n: 5, pin: true },
+    { at: 16000, emo: '✨', n: 4, pin: true },
+    { at: 17500, emo: '🤍', n: 4, pin: true },
+    { at: 19500, emo: '🙏', n: 3, pin: true },
+    { at: 22000, emo: '💪', n: 4, pin: true },
+    // Act 3 — hype
+    { at: 29000, emo: '🔥', n: 10, pin: true },
+    { at: 30500, emo: '😂', n: 8 },
+    { at: 33000, emo: '🎉', n: 6, pin: true },
+    { at: 35000, emo: '💯', n: 5 },
+    { at: 38500, emo: '🔥', n: 8, pin: true },
+    { at: 41500, emo: '🚀', n: 4 },
   ],
 };
 
@@ -946,14 +1362,15 @@ function setStoryUI({ chip, caption, viewers }) {
 }
 
 function pruneStoryChat() {
-  for (let i = CHAT_CIRCLE.length - 1; i >= 0; i--) {
-    if (CHAT_CIRCLE[i].story) CHAT_CIRCLE.splice(i, 1);
+  const list = livingRoomChat();
+  for (let i = list.length - 1; i >= 0; i--) {
+    if (list[i].story) list.splice(i, 1);
   }
 }
 
 function injectStoryMessage(m) {
   const id = `story-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-  CHAT_CIRCLE.push({
+  livingRoomChat().push({
     id,
     story: true,
     author: m.author,
@@ -964,11 +1381,14 @@ function injectStoryMessage(m) {
     reacts: { ...(m.reacts || {}) },
     system: !!m.system,
   });
-  if (activeChat === 'circle') renderChat();
+  if (activeChat === 'stream') renderChat();
   renderCreatorChat();
   pushCreatorActivity(`${m.author}: ${m.text}`);
-  const last = CHAT_CIRCLE[CHAT_CIRCLE.length - 1];
-  if (last) pinGoodMessage(last);
+  const last = livingRoomChat()[livingRoomChat().length - 1];
+  if (!last) return;
+  const force = !!m.forcePin || (VALIDATION_WORDS.test(last.text || '') && S.streamMood === 'tense');
+  pinValidationMessage(last, { force, seed: !!m.forcePin });
+  if (m.forcePin) onReactionChange();
 }
 
 function storyHasMoodGap() {
@@ -1063,17 +1483,21 @@ function startStoryDemo() {
   }
 
   pruneStoryChat();
-  // Replace visible circle chat with cold-open for the story
-  CHAT_CIRCLE.length = 0;
-  STORY_BASE_CHAT.forEach((m) => CHAT_CIRCLE.push({ ...m, reacts: { ...(m.reacts || {}) } }));
+  // Replace Stream (Living Room) chat with cold-open for the story
+  CHAT_STREAM.length = 0;
+  STORY_BASE_CHAT.forEach((m) => CHAT_STREAM.push({ ...m, reacts: { ...(m.reacts || {}) } }));
 
   reactionLog = [];
+  momentBoardIds = [];
+  pinnedMsg = null;
+  if (pinTimer) clearTimeout(pinTimer);
+  pinTimer = null;
   S.msgReacts = {};
   S.myReacts = {};
   save();
 
-  activeChat = 'circle';
-  document.querySelectorAll('.chat-tab').forEach((x) => x.classList.toggle('active', x.dataset.chat === 'circle'));
+  activeChat = 'stream';
+  document.querySelectorAll('.chat-tab').forEach((x) => x.classList.toggle('active', x.dataset.chat === 'stream'));
   applyChatMode();
   renderChat();
 
@@ -1098,14 +1522,18 @@ function startStoryDemo() {
   STORY_DEMO.bursts.forEach((b) => {
     storyTimers.push(setTimeout(() => {
       pushReactionLog(b.emo, b.n);
-      const last = [...CHAT_CIRCLE].reverse().find((x) => !x.system);
+      const pinLive = pinnedMsg && pinnedMsg.until > Date.now();
+      const last = (b.pin && pinLive)
+        ? findChatMessage(pinnedMsg.id)
+        : [...livingRoomChat()].reverse().find((x) => !x.system);
       if (last) {
         S.msgReacts[last.id] = S.msgReacts[last.id] || {};
         S.msgReacts[last.id][b.emo] = (S.msgReacts[last.id][b.emo] || 0) + b.n;
+        if (last.reacts) last.reacts[b.emo] = (last.reacts[b.emo] || 0) + b.n;
         save();
-        if (activeChat === 'circle') renderChat();
+        if (activeChat === 'stream') renderChat();
         renderCreatorChat();
-        if (GOOD_REACTS.has(b.emo)) pinGoodMessage(last);
+        if (VALIDATION_REACTS.has(b.emo) || b.pin) pinValidationMessage(last);
       }
       if (REACT_MOOD[b.emo]) nudgeMood(REACT_MOOD[b.emo], Math.min(4, b.n), false);
       onReactionChange();
@@ -1256,7 +1684,7 @@ function bindEvent() {
   const sb = $('spamBtn');
   if (sb) sb.onclick = () => {
     if (S.stormTeam === 'kekw') S.stormA += Math.ceil(Math.random() * 6); else S.stormB += Math.ceil(Math.random() * 6);
-    CHAT_CIRCLE.push({
+    CHAT_STREAM.push({
       id: `spam${Date.now()}`, author: 'SpookyBunny', mine: true,
       text: S.stormTeam === 'kekw' ? 'KEKW' : 'HYPE', reacts: {},
     });
@@ -1641,7 +2069,15 @@ const MOOD_LINES = {
   confused: ['wait what', 'what camera is he using?', 'i dont get it', 'huh?', 'can someone explain'],
 };
 
-const REACT_MOOD = { '🔥': 'hype', '😂': 'hype', '👏': 'cozy', '👀': 'confused', '❓': 'confused', '💀': 'tilt' };
+const REACT_MOOD = {
+  '🔥': 'hype', '😂': 'hype', '🎉': 'hype', '💯': 'hype', '🚀': 'hype', '⚡': 'hype',
+  '👏': 'cozy', '✨': 'cozy', '💪': 'cozy', '🌸': 'cozy', '☀️': 'cozy', '😌': 'cozy',
+  '👀': 'confused', '❓': 'confused',
+  '💀': 'tilt',
+  '💙': 'confused', '🫂': 'confused', '🥺': 'confused', '😢': 'confused', '💔': 'confused',
+  '🫶': 'confused', '💧': 'confused', '😔': 'confused', '🤍': 'confused', '🙏': 'confused',
+  '😭': 'hype',
+};
 
 /* Chat-native instruments — nothing here is a dashboard "tool".
    Viewers move mood by typing in Circle. Streamers move mood by
@@ -1902,13 +2338,13 @@ function applyMessageSignal(text, mine = false) {
   return hit;
 }
 
-/* Streamer cue = a real message in Circle + a swarm of replies.
+/* Streamer cue = a real message in Stream Living Room + a swarm of replies.
    That swarm is the instrument — the map just reads it. */
 function dropStreamerCue(id) {
   const cue = STREAMER_CUES.find((c) => c.id === id);
   if (!cue) return;
 
-  CHAT_CIRCLE.push({
+  livingRoomChat().push({
     id: `cue${Date.now()}`,
     author: 'Clavicular',
     badge: 'stream',
@@ -1921,7 +2357,7 @@ function dropStreamerCue(id) {
   const names = ['NightOwl', 'ClipLord', 'TokyoDrift', 'KEKWKing', 'PixelPam', 'neon_nova', 'speedrunner88', 'MoonMile'];
   cue.swarm.forEach((line, i) => {
     setTimeout(() => {
-      CHAT_CIRCLE.push({
+      livingRoomChat().push({
         id: `sw${Date.now()}${i}`,
         author: names[i % names.length],
         color: '#c9d6dc',
@@ -1953,13 +2389,13 @@ function dropStreamerCue(id) {
 
   save();
   const focus = agents.filter((a) => a.sel).length;
-  toast('Cue dropped into Circle', focus
+  toast('Cue dropped into Stream', focus
     ? `${cue.label} · landing harder on ${focus} selected chatters`
     : `${cue.label} · chat is swarming`, cue.ic);
 
   if (activeChat === 'mood') {
-    activeChat = 'circle';
-    document.querySelectorAll('.chat-tab').forEach((x) => x.classList.toggle('active', x.dataset.chat === 'circle'));
+    activeChat = 'stream';
+    document.querySelectorAll('.chat-tab').forEach((x) => x.classList.toggle('active', x.dataset.chat === 'stream'));
     applyChatMode();
   }
   renderChat();
@@ -1970,7 +2406,7 @@ function dropStreamerCue(id) {
 
 function renderCueStrip() {
   const html = STREAMER_CUES.map((c) =>
-    `<button class="cue-btn" data-cue="${c.id}" title="Drop into Circle chat">${c.ic} ${c.label}</button>`).join('');
+    `<button class="cue-btn" data-cue="${c.id}" title="Drop into Stream chat">${c.ic} ${c.label}</button>`).join('');
   if ($('cueBtns')) {
     $('cueBtns').innerHTML = html;
     $('cueBtns').querySelectorAll('[data-cue]').forEach((b) => {
@@ -2320,12 +2756,14 @@ function previewMsg(text) {
 }
 
 function renderStyle() {
-  const rt = S.roomTheme || DEFAULT.roomTheme;
+  const rt = { ...DEFAULT.roomTheme, ...(S.roomTheme || {}) };
+  S.roomTheme = rt;
   const accents = ['#53fc18', '#ff8a3d', '#ffd84a', '#5eb7ff', '#7b9cff', '#ffb020', '#b06cff', '#ff5c8a'];
+  const wpClass = rt.wallpaper ? ` wallpaper-${rt.wallpaper}` : '';
 
   $('stylePreview').innerHTML = `
     <div class="preview-head">Live preview · living room</div>
-    <div class="preview-body preview-room" style="--room-accent:${rt.accent};box-shadow:inset 0 0 ${12 + (rt.glow || 0.5) * 28}px ${rt.accent}55">
+    <div class="preview-body preview-room${wpClass}" style="--room-accent:${rt.accent};--room-tint:${rt.tint || 'transparent'};box-shadow:inset 0 0 ${12 + (rt.glow || 0.5) * 28}px ${rt.accent}55" ${rt.wallpaper ? `data-wallpaper="${rt.wallpaper}"` : ''}>
       <div class="msg"><div class="msg-line"><span class="msg-author" style="color:#c9d6dc">TokyoDrift</span>wait is he actually going in</div></div>
       ${previewMsg('this is how my messages look now')}
       <div class="msg"><div class="msg-line"><span class="msg-author" style="color:#b06cff">PixelPam</span>ok that room glow hits</div></div>
@@ -2337,12 +2775,18 @@ function renderStyle() {
   const roomAccent = `<div class="style-swatches">${accents.map((c) =>
     `<button type="button" class="swatch ${rt.accent === c ? 'sel' : ''}" data-room="accent" data-v="${c}" style="background:${c}"></button>`).join('')}</div>`;
 
+  const wallpapers = `<div class="style-picks room-wallpapers">${WALLPAPER_PRESETS.map((w) =>
+    `<button type="button" class="style-pick wallpaper-pick ${(rt.wallpaper || '') === w.id ? 'sel' : ''}" data-room="wallpaper" data-v="${w.id}" title="${w.label}">
+      <span class="wp-swatch${w.id ? ` wallpaper-${w.id}` : ''}"></span>
+      <small>${w.label}</small>
+    </button>`).join('')}</div>`;
+
   $('styleSections').innerHTML = `
     <div class="style-set room-studio">
       <h4>Room Studio <span class="new-tag">NEW</span></h4>
-      <p class="muted small">Dress the chat rail. Shared mood wash layers on top.</p>
+      <p class="muted small">Dress the chat rail — color, glow, wallpaper. Mood wash layers on top.</p>
       <label class="follow-row">
-        <span><b>Follow room mood</b><small>Auto-apply stream beat lighting hints</small></span>
+        <span><b>Follow room mood</b><small>Auto-apply chat mood + stream beat lighting</small></span>
         <input type="checkbox" id="followMoodToggle" ${S.followMood !== false ? 'checked' : ''} />
       </label>
       <div class="room-field"><span>Accent</span>${roomAccent}</div>
@@ -2354,10 +2798,15 @@ function renderStyle() {
         <span>Tint wash</span>
         <div class="style-picks room-tints">
           <button type="button" class="style-pick ${!rt.tint ? 'sel' : ''}" data-room="tint" data-v="">None</button>
-          <button type="button" class="style-pick ${rt.tint === 'rgba(255,138,61,.12)' ? 'sel' : ''}" data-room="tint" data-v="rgba(255,138,61,.12)">Warm</button>
+          <button type="button" class="style-pick ${rt.tint === 'rgba(255,138,61,.12)' || rt.tint === 'rgba(255,138,61,.14)' ? 'sel' : ''}" data-room="tint" data-v="rgba(255,138,61,.14)">Warm</button>
           <button type="button" class="style-pick ${rt.tint === 'rgba(94,183,255,.10)' ? 'sel' : ''}" data-room="tint" data-v="rgba(94,183,255,.10)">Cool</button>
-          <button type="button" class="style-pick ${rt.tint === 'rgba(255,176,32,.12)' ? 'sel' : ''}" data-room="tint" data-v="rgba(255,176,32,.12)">Amber</button>
+          <button type="button" class="style-pick ${rt.tint === 'rgba(255,176,32,.12)' || rt.tint === 'rgba(255,216,74,.12)' ? 'sel' : ''}" data-room="tint" data-v="rgba(255,176,32,.12)">Amber</button>
+          <button type="button" class="style-pick ${rt.tint === 'rgba(123,156,255,.12)' ? 'sel' : ''}" data-room="tint" data-v="rgba(123,156,255,.12)">Violet</button>
         </div>
+      </div>
+      <div class="room-field">
+        <span>Wallpaper</span>
+        ${wallpapers}
       </div>
     </div>
     <div class="style-set"><h4>Name colour</h4>${swatches}</div>
@@ -2396,7 +2845,7 @@ function renderStyle() {
 
   document.querySelectorAll('[data-room]').forEach((b) => {
     b.onclick = () => {
-      S.roomTheme = S.roomTheme || { ...DEFAULT.roomTheme };
+      S.roomTheme = { ...DEFAULT.roomTheme, ...(S.roomTheme || {}) };
       S.roomTheme[b.dataset.room] = b.dataset.v;
       save();
       applyRoomTheme();
@@ -2409,14 +2858,17 @@ function renderStyle() {
     follow.onchange = () => {
       S.followMood = follow.checked;
       save();
-      if (S.followMood) applyStreamPalette(false);
-      toast('Follow mode', S.followMood ? 'ON — beat hints auto-apply' : 'OFF — Accept to change lighting', '💡');
+      if (S.followMood) {
+        const { mood } = getRoomMood();
+        if (mood !== 'neutral') applyRoomMoodPalette(mood, { quiet: true });
+        else applyStreamPalette(false, { quiet: true });
+      }
     };
   }
   const glow = $('roomGlow');
   if (glow) {
     glow.oninput = () => {
-      S.roomTheme = S.roomTheme || { ...DEFAULT.roomTheme };
+      S.roomTheme = { ...DEFAULT.roomTheme, ...(S.roomTheme || {}) };
       S.roomTheme.glow = (+glow.value) / 100;
       save();
       applyRoomTheme();
@@ -2435,18 +2887,19 @@ function openStyle() {
 
 function applyChatMode() {
   const mood = activeChat === 'mood';
-  const circle = activeChat === 'circle';
+  const stream = activeChat === 'stream';
   $('moodPane').classList.toggle('on', mood);
   $('chatBody').style.display = mood ? 'none' : '';
   if ($('chatPin')) $('chatPin').style.display = mood ? 'none' : '';
+  if ($('momentBoard')) $('momentBoard').style.display = mood ? 'none' : '';
   const liveEv = document.querySelector('.live-event');
   if (liveEv) liveEv.style.display = '';
-  if ($('cueStrip')) $('cueStrip').classList.toggle('on', circle);
+  if ($('cueStrip')) $('cueStrip').classList.toggle('on', stream);
   $('chatContext').textContent = mood
-    ? 'Live mood read of Circle chat · moved by messages, cues, reactions'
-    : (circle
-      ? `Shared across 3 connected creators · ${S.privacy.slowMode ? 'slow mode' : 'open'} · type to move mood`
-      : 'Clavicular channel chat · standard Kick chat');
+    ? 'Live mood read of Stream chat · moved by messages, cues, reactions'
+    : (stream
+      ? 'Living Room · tap a message to react · Quiet Validation + mood ambience'
+      : `Shared across 3 connected creators · ${S.privacy.slowMode ? 'slow mode' : 'open'} · Circle mods active`);
   if (!mood) renderChatPin();
 }
 
@@ -2578,27 +3031,23 @@ function renderCreatorActivity() {
 function renderCreatorChat() {
   const el = $('cdChatBody');
   if (!el) return;
-  const list = CHAT_CIRCLE.length ? CHAT_CIRCLE : [];
+  const list = livingRoomChat();
   el.innerHTML = list.map((m) => {
     if (m.system) return `<div class="msg system">${m.text}</div>`;
-    const stored = S.msgReacts[m.id] || {};
-    const all = {};
-    CORE_REACTS.forEach((k) => {
-      all[k] = ((m.reacts || {})[k] || 0) + (stored[k] || 0);
-    });
+    const all = mergeReactCounts(m);
     const mine = S.myReacts[m.id] || [];
-    const pills = msgReactRow(m.id, all, mine);
+    const pills = countedReactChips(m.id, all, mine);
+    const tray = openEmojiTrayId === m.id ? emojiTrayHtml(m.id) : '';
     const badge = m.badge ? `<span class="msg-badge b-${m.badge}">${m.badgeText}</span>` : '';
     return `
-      <div class="msg">
-        <div class="msg-line">${badge}<span class="msg-author" style="color:${m.color || '#c9d6dc'}">${m.author}</span>${m.text}</div>
+      <div class="msg" data-msg-id="${m.id}">
+        <div class="msg-line" data-tap-msg="${m.id}">${badge}<span class="msg-author" style="color:${m.color || '#c9d6dc'}">${m.author}</span>${m.text}</div>
         <div class="msg-reacts">${pills}</div>
+        ${tray}
       </div>`;
   }).join('');
   el.scrollTop = el.scrollHeight;
-  el.querySelectorAll('[data-react]').forEach((b) => {
-    b.onclick = () => addReaction(b.dataset.react, b.dataset.emo);
-  });
+  bindMessageReacts(el);
 }
 
 /* ─── INIT ─────────────────────────────────────────────── */
@@ -2612,6 +3061,11 @@ function init() {
   OverworldBridge.init();
   startRoomMoodTick();
   startBeatTimeline();
+  applyRoomTheme();
+  applySharedWash();
+
+  const ambReset = $('ambienceReset');
+  if (ambReset) ambReset.onclick = () => resetAmbience();
 
   document.querySelectorAll('.nav-btn').forEach((b) => { b.onclick = () => switchView(b.dataset.view); });
   document.querySelectorAll('[data-goto]').forEach((b) => { b.onclick = () => switchView(b.dataset.goto); });
@@ -2648,14 +3102,7 @@ function init() {
     };
   });
 
-  $('quickReact').innerHTML = REACTIONS.map((e) => `<button data-quick="${e}">${e}</button>`).join('');
-  $('quickReact').querySelectorAll('[data-quick]').forEach((b) => {
-    b.onclick = () => {
-      const list = chatData().filter((m) => !m.system);
-      const last = list[list.length - 1];
-      if (last) addReaction(last.id, b.dataset.quick);
-    };
-  });
+  // quick-react strip removed — tap a message for the emoji tray
 
   $('chatForm').onsubmit = (e) => {
     e.preventDefault();
@@ -2705,29 +3152,21 @@ function init() {
       e.preventDefault();
       const v = $('cdChatInput').value.trim();
       if (!v) return;
-      CHAT_CIRCLE.push({
+      livingRoomChat().push({
         id: `cd${Date.now()}`, story: true, author: 'Clavicular',
         badge: 'stream', badgeText: 'STREAMER', color: '#53fc18', text: v, reacts: {},
       });
       $('cdChatInput').value = '';
       save();
-      if (activeChat === 'circle') renderChat();
+      if (activeChat === 'stream') renderChat();
       renderCreatorChat();
       pushCreatorActivity(`You: ${v}`);
     };
   }
 
   if ($('cdQuickReact')) {
-    $('cdQuickReact').innerHTML = REACTIONS.map((e) => `<button type="button" data-cd-quick="${e}">${e}</button>`).join('');
-    $('cdQuickReact').querySelectorAll('[data-cd-quick]').forEach((b) => {
-      b.onclick = () => {
-        const list = CHAT_CIRCLE.filter((m) => !m.system);
-        const last = list[list.length - 1];
-        if (last) addReaction(last.id, b.dataset.cdQuick);
-        else burstReactions(b.dataset.cdQuick, 3);
-        pushCreatorActivity(`Quick react ${b.dataset.cdQuick}`);
-      };
-    });
+    $('cdQuickReact').hidden = true;
+    $('cdQuickReact').innerHTML = '';
   }
 
   if ($('cdGoLive')) {

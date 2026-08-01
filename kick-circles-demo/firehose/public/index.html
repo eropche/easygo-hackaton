@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Pit — Kick chat, reinvented</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar__brand">
+      <span class="topbar__logo">▲</span>
+      <span class="topbar__title">THE PIT</span>
+      <span class="topbar__tag">kick chat, reinvented</span>
+    </div>
+
+    <form id="connect-form" class="topbar__connect">
+      <input id="slug-input" type="text" placeholder="kick channel (e.g. xqc)"
+             autocomplete="off" spellcheck="false" />
+      <button type="submit">Join</button>
+    </form>
+
+    <div class="topbar__status">
+      <span id="status-dot" class="dot dot--off"></span>
+      <span id="status-text">demo mode</span>
+    </div>
+  </header>
+
+  <div class="suggest" id="suggest"></div>
+
+  <main class="pit" id="pit">
+    <!-- hype meter -->
+    <div class="hype">
+      <div class="hype__label">HYPE</div>
+      <div class="hype__track"><div class="hype__fill" id="hype-fill"></div></div>
+      <div class="hype__rate" id="hype-rate">0/s</div>
+    </div>
+
+    <!-- bubbles spawn here -->
+    <div class="pit__stage" id="stage"></div>
+
+    <!-- classic feed toggle -->
+    <aside class="feed feed--hidden" id="feed">
+      <div class="feed__head">classic feed</div>
+      <div class="feed__list" id="feed-list"></div>
+    </aside>
+    <button class="feed-toggle" id="feed-toggle" title="Toggle classic feed">☰</button>
+  </main>
+
+  <footer class="composer">
+    <input id="msg-input" type="text" maxlength="200"
+           placeholder="Throw a message into the pit… (local only — Kick login needed to really post)" />
+    <button id="msg-send">Send</button>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

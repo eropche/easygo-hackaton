@@ -55,6 +55,10 @@ monitor, channel actions). Hosts **Mood Pulse**, stream beat controls, gap alert
 **My Circles / Overworld** — walkable Circles world in an iframe compartment; host-side dock
 holds Circle cards, score, mission, privacy. See `overworld/ISOLATION.md`.
 
+**Firehose (The Pit)** — teammate chat experiment under `firehose/` (bubble/merge UI + live
+Kick feed via Wrangler). Not wired into Overworld yet — static demo at
+`http://localhost:8080/firehose/public/`. See `firehose/README.md`.
+
 **Quests** — 9 daily quests and 1 weekly co-op mission, streak multiplier, and a visible
 daily score cap that actually stops the score accruing.
 

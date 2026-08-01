@@ -34,7 +34,7 @@ The file is parsed locally in the browser — nothing is uploaded anywhere. The 
 
 - **The Hundred Gate & Top Streamers Region** — BIG Skyline, MEDIUM Guildway and SMALL/NICHE Lantern Wilds rank streets with 100 magnitude-scaled creator pavilions
 - **Game Realms, Vibe Archipelago, Doing Districts, Reacts & Troll Badlands, Language Harbours, Time & Rhythm Skies, Intensity Biomes** — 96 taxonomy nodes as walkable places
-- **81 Halls of Twenty** — enterable category rooms with ranked creator monuments
+- **Top 5 rooms** — enterable category & genre rooms with the top 5 ranked creator monuments each
 - **200 circle seeds** — tiered as full islands, village doors and pop-ups
 - **Weighted graph routing** (Dijkstra over the traversal graph) shown as firefly trails, plus iris-wipe fast travel, a live minimap with LOD labels, portal echoes, confidence plaques and language ferry tokens
 

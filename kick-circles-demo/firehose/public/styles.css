@@ -1,0 +1,268 @@
+* { margin: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0e0e10;
+  --panel: #18181c;
+  --line: #2a2a30;
+  --text: #efeff1;
+  --muted: #a1a1aa;
+  --green: #53fc18;
+  --hot: #ff4d4d;
+}
+
+html, body { height: 100%; }
+
+body {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  overflow: hidden;
+}
+
+/* ── top bar ─────────────────────────────── */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+
+.topbar__brand { display: flex; align-items: baseline; gap: 0.5rem; }
+.topbar__logo { color: var(--green); font-size: 1.1rem; }
+.topbar__title { font-weight: 800; letter-spacing: 0.12em; }
+.topbar__tag { color: var(--muted); font-size: 0.75rem; }
+
+.topbar__connect { display: flex; gap: 0.4rem; flex: 1; max-width: 24rem; }
+.topbar__connect input {
+  flex: 1;
+  background: #0a0a0c;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 0.45rem 0.7rem;
+  font-size: 0.9rem;
+}
+.topbar__connect input:focus { outline: 1px solid var(--green); }
+.topbar__connect button,
+.composer button {
+  background: var(--green);
+  color: #000;
+  border: 0;
+  border-radius: 6px;
+  padding: 0.45rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.topbar__connect button:hover, .composer button:hover { filter: brightness(1.1); }
+
+.topbar__status { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--muted); }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.dot--off { background: #555; }
+.dot--live { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.dot--err { background: var(--hot); }
+
+/* ── suggestions ─────────────────────────── */
+.suggest {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.4rem 1rem;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--line);
+  min-height: 2.2rem;
+}
+.suggest__chip {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 0.2rem 0.75rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.suggest__chip:hover { color: var(--green); border-color: var(--green); }
+
+/* ── the pit ─────────────────────────────── */
+.pit { position: relative; flex: 1; overflow: hidden; }
+
+.pit__stage { position: absolute; inset: 0; overflow: hidden; isolation: isolate; }
+
+/* hype-mode ambience — pulse a cheap opacity layer, never a filter on the
+   stage: filters force the whole stage (and every bubble layer) to
+   re-rasterize each frame and will eventually crash the tab under load */
+.pit__stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 110%, rgba(83, 252, 24, 0.18), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+body.hype .pit__stage::after {
+  opacity: 1;
+  animation: hypepulse 0.8s ease-in-out infinite alternate;
+}
+@keyframes hypepulse { from { opacity: 0.45; } to { opacity: 1; } }
+
+/* ── bubbles ─────────────────────────────── */
+/* wrapper owns motion (compositor-only transform), bubble owns look + scale */
+.bubble-wrap {
+  position: absolute;
+  bottom: 0;
+  width: 0;
+  transform: translate(0, 80px); /* start just below the stage */
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
+.bubble {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: max-content;
+  max-width: 22rem;
+  padding: 0.45rem 0.8rem;
+  background: rgba(24, 24, 28, 0.92);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  font-size: 0.9rem;
+  line-height: 1.3;
+  transform: translateX(-50%) scale(var(--scale, 1));
+  transform-origin: bottom center;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  word-break: break-word;
+  pointer-events: none;
+}
+
+.bubble--link { pointer-events: auto; cursor: pointer; }
+.bubble--link:hover {
+  border-color: var(--green);
+  background: rgba(30, 34, 28, 0.97);
+}
+.bubble--link:hover .bubble__chan { color: var(--green); }
+.bubble__user { font-weight: 700; margin-right: 0.35rem; }
+.bubble__chan {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.15rem;
+}
+.bubble__emote { height: 1.6em; vertical-align: middle; }
+
+.bubble--combo {
+  border-color: var(--green);
+  box-shadow: 0 0 14px rgba(83, 252, 24, 0.35);
+}
+.bubble__combo {
+  position: absolute;
+  top: -0.7rem;
+  right: -0.5rem;
+  background: var(--green);
+  color: #000;
+  font-weight: 800;
+  font-size: 0.72rem;
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+}
+.bubble--mine { border-color: #7c5cff; box-shadow: 0 0 12px rgba(124, 92, 255, 0.4); }
+
+/* ── hype meter ──────────────────────────── */
+.hype {
+  position: absolute;
+  top: 0.8rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 5;
+  background: rgba(14, 14, 16, 0.7);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.3rem 0.8rem;
+  /* no backdrop-filter: it would re-blur the constantly-animating stage
+     behind it every frame — expensive and contributes to GPU churn */
+}
+.hype__label { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.15em; color: var(--muted); }
+.hype__track { width: 10rem; height: 8px; background: #0a0a0c; border-radius: 999px; overflow: hidden; }
+.hype__fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--green), #f5d90a, var(--hot));
+  transition: width 0.3s ease;
+}
+.hype__rate { font-size: 0.72rem; color: var(--muted); min-width: 2.6rem; text-align: right; }
+
+/* ── classic feed ────────────────────────── */
+.feed {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 18rem;
+  background: rgba(14, 14, 16, 0.92);
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  z-index: 4;
+  transition: transform 0.25s ease;
+}
+.feed--hidden { transform: translateX(100%); }
+.feed__head {
+  padding: 0.5rem 0.8rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+.feed__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.82rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.feed__list .bubble__emote { height: 1.4em; }
+.feed__chan { color: var(--muted); text-decoration: none; font-size: 0.72rem; }
+.feed__chan:hover { color: var(--green); }
+
+.feed-toggle {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.8rem;
+  z-index: 6;
+  background: var(--panel);
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  width: 2rem; height: 2rem;
+  cursor: pointer;
+}
+.feed-toggle:hover { color: var(--green); border-color: var(--green); }
+
+/* ── composer ────────────────────────────── */
+.composer {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+}
+.composer input {
+  flex: 1;
+  background: #0a0a0c;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 0.55rem 0.8rem;
+}
+.composer input:focus { outline: 1px solid var(--green); }

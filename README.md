@@ -31,6 +31,8 @@ Everything runs on mocked data that mirrors what the KICK Public API exposes for
 
 Docs: [prototype README](kick-circles-demo/README.md) · [full brief and demo script](kick-circles-demo/PREP-HACKDAY.md)
 
+Also in the demo folder: [`firehose/`](kick-circles-demo/firehose/) (The Pit chat experiment — not integrated yet).
+
 ---
 
 ## Wild card — KICK Circles as a walkable world
